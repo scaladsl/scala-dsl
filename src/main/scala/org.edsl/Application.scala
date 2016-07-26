@@ -1,9 +1,9 @@
 package org.edsl
 
-trait Primitive
-object string extends Primitive
-object int extends Primitive
-object bool extends Primitive
+trait FieldType
+object string extends FieldType
+object int extends FieldType
+object bool extends FieldType
 
 case class Identifier(name: Symbol) {
 
@@ -19,7 +19,7 @@ case class Identifier(name: Symbol) {
     println(s"}")
   }
 
-  def as(primitive: Primitive) = {
+  def as(primitive: FieldType) = {
     println(s"$name ::= $primitive")
   }
 }
@@ -42,5 +42,6 @@ object Application {
     }
   }
 }
+
 
 
