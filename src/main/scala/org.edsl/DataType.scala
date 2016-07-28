@@ -1,8 +1,14 @@
 package org.edsl
 
+/**
+ * Represents a field data type.
+ */
 trait DataType {
+
+  /** Indicates whether this type is primitive. */
   def isPrimitive(): Boolean
 
+  /** Indicates whether this type is composite (not primitive). */
   def isComposite() = !isPrimitive
 }
 
@@ -14,7 +20,7 @@ class Composite extends DataType {
   def isPrimitive = false
 }
 
-case class TString() extends Primitive
-case class TInt() extends Primitive
-case class TBool() extends Primitive
-case class TFloat() extends Primitive
+object string extends Primitive
+object int extends Primitive
+object bool extends Primitive
+object float extends Primitive

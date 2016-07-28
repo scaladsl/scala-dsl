@@ -5,7 +5,7 @@ import scala.collection._
 /**
  * Represents a Structure entity.
  *
- * @param name: Structure name.
+ * @param name Structure name.
  */
 class Structure(name: String) extends Container(name) {
 

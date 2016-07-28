@@ -3,6 +3,9 @@ package org.edsl
 import scala.collection.mutable.ListBuffer
 import scala.collection.immutable.List
 
+/**
+ * Represents a Container  entity.
+ */
 class Container(name: String) extends Entity(name) {
 
   private val _children = new ListBuffer[Entity]
