@@ -2,7 +2,7 @@ package org.edsl
 
 case class Identifier(name: Symbol) {
 
-  def namespace(body: => Unit)={
+  def namespace(body: => Unit) = {
     assert(Context.current.isInstanceOf[Namespace])
 
     val ns = new Namespace(name.toString)
@@ -22,10 +22,10 @@ case class Identifier(name: Symbol) {
     Context.leave
   }
 
-  def as(datatype: DataType) = {
+  def as(datatype: Symbol) = {
     assert(Context.current.isInstanceOf[Structure])
 
-    var field = new Field(name.toString, datatype)
+    var field = new Field(name.toString, datatype.toString)
     Context.add(field)
   }
 }

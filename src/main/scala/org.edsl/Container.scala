@@ -1,22 +1,15 @@
 package org.edsl
 
-import scala.collection.mutable.ListBuffer
 import scala.collection.immutable.List
 
-/**
- * Represents a Container  entity.
- */
-class Container(name: String) extends Entity(name) {
+trait Container {
 
-  private val _children = new ListBuffer[Entity]
+  protected var items: List[Entity]
 
-  def addChild(child:Entity) = _children += child
+  def :+ (child: Entity) = items = items :+ child
 
-  def removeChild(child: Entity) = _children -= child
+  def children() = items
 
-  def filter[T <: Entity]()(implicit m: Manifest[T]): List[T] = {
-    children.filter(_.getClass ==  m.erasure.asInstanceOf[Class[T]]).toList.asInstanceOf[List[T]]
-  }
-
-  def children(): List[Entity] = _children.toList
+  def filter[T <: Entity]()(implicit m: Manifest[T]): List[T] =
+    items.filter(_.getClass == m.erasure.asInstanceOf[Class[T]]).asInstanceOf[List[T]]
 }
