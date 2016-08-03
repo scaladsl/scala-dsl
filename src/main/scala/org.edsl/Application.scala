@@ -22,6 +22,7 @@ object Application {
       }
     }
 
+    val root = Context.current.asInstanceOf[Namespace]
     val java = new Java("/home/anahitm/dev/dsl-output")
     root.namespaces().foreach { ns => java.generate(ns) }
     root.structures().foreach { st => java.generate(st) }
