@@ -4,6 +4,6 @@ package org.edsl
  * Represents a field of structure.
  *
  * @param name     Field name.
- * @param dataType Field type.
+ * @param datatype Field type.
  */
-class Field(name: String, val dataType: DataType) extends Entity(name)
+class Field(name: String, val datatype: String) extends Entity(name)

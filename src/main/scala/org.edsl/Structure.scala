@@ -7,11 +7,12 @@ import scala.collection._
  *
  * @param name Structure name.
  */
-class Structure(name: String) extends Container(name) {
+class Structure(name: String) extends Entity(name) with Container {
+
+  protected var items = List[Entity]()
 
   /**
    * Filters children by the specified type.
    */
-  def fields(): List[Field] = filter[Field]()
-
+  def fields(): List[Field] = filter[Field]
 }
