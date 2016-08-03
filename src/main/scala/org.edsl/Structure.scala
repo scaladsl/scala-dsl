@@ -1,13 +1,11 @@
 package org.edsl
 
-import scala.collection._
-
 /**
  * Represents a Structure entity.
  *
  * @param name Structure name.
  */
-class Structure(name: String) extends Entity(name) with Container {
+class Structure(name: String, comment: String) extends Entity(name, comment) with Container {
 
   protected var items = List[Entity]()
 

@@ -5,4 +5,5 @@ package org.edsl
  *
  * @param name: Entity name.
  */
-class Entity(val name: String)
+class Entity(val name: String,  val comment: String){
+}

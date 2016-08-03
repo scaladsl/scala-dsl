@@ -4,7 +4,7 @@ import scala.collection.mutable.Stack
 
 object Context {
   private val stack = Stack[Container]()
-  stack.push(new Namespace("__root__"))
+  stack.push(new Namespace("__root__", ""))
 
   def enter(container: Container) = stack.push(container)
   def leave() = stack.pop

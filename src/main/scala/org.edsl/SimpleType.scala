@@ -1,6 +1,6 @@
 package org.edsl
 
-class SimpleType(name: String) extends Entity(name) {
+class SimpleType(name: String, comment: String) extends Entity(name, comment) {
 
   def primitive(): Boolean = true
 

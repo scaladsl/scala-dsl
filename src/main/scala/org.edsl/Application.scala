@@ -1,19 +1,19 @@
 package org.edsl
 
 import java.io._
-
 import org.edsl.DSL._
 
 object Application {
 
   def main(args: Array[String]): Unit = {
-
     'foo namespace {
+
       'user1 struct {
+        !"my comment"
         'username as 'string
         'address as 'string
       }
-      //!("rhyfr")
+
       'bar namespace {
         'user2 struct {
           'username2 as 'string
@@ -42,16 +42,6 @@ object Application {
       currentPackage = currentPackage diff List(namespace.name)
     }
 
-    // PascalCase
-    def toPascal(s: String): String = s.split("_").map(_.capitalize).mkString("")
-
-    // camelCase
-    def toCamel(s: String): String =
-      if (s.length > 0)
-        toPascal(s).substring(0, 1).toLowerCase + toPascal(s).substring(1)
-      else
-        s
-
     def toStandartJavaType(datatype: String): String = {
       datatype match {
         case "int" => "int"
@@ -66,7 +56,7 @@ object Application {
 
     var writer: PrintWriter = null
     def source(name: String)(body: => Unit): Unit = {
-      writer = new PrintWriter(new File(currentPath + toPascal(name) + ".java"))
+      writer = new PrintWriter(new File(currentPath + name.toPascal + ".java"))
       body
       writer.close
     }
@@ -85,19 +75,19 @@ object Application {
     def generate(structure: Structure): Unit = {
       source(structure.name) {
         ln(s"package ${currentPackage.mkString(".")};")
-        val structName = toPascal(structure.name)
+        val structName = structure.name.toPascal
         block(s"\npublic class " + structName + " {\n") {
           structure.fields foreach { f =>
-            var fieldName = toCamel(f.name)
+            var fieldName = f.name.toCamel
             ln(" private " + toStandartJavaType(f.datatype) + " " + fieldName + ";")
           }
           for (f <- structure.fields()) {
-            var fieldName = toCamel(f.name)
+            var fieldName = f.name.toCamel
             ln(s"\n public void set$structName (" + toStandartJavaType(f.datatype) + s" $fieldName){")
             ln(s"   this.$fieldName = $fieldName;\n }")
           }
           for (f <- structure.fields()) {
-            var fieldName = toCamel(f.name)
+            var fieldName = f.name.toCamel
             var fieldType = toStandartJavaType(f.datatype)
             ln(s"\n public $fieldType get$structName (" + fieldType + s" $fieldName){")
             ln(s"   return $fieldName;\n }")
@@ -107,4 +97,22 @@ object Application {
       }
     }
   }
+}
+
+class StringEx(s: String) {
+
+  // PascalCase
+  def toPascal: String = s.split("_").map(_.capitalize).mkString("")
+
+  // camelCase
+  def toCamel: String =
+    if (s.length > 0)
+      toPascal.substring(0, 1).toLowerCase + toPascal.substring(1)
+    else
+      s
+
+  //unary operator 
+  def unary_! = new StringEx(s)
+  override def toString = s
+
 }
