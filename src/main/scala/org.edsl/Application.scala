@@ -6,10 +6,12 @@ import org.edsl.DSL._
 object Application {
 
   def main(args: Array[String]): Unit = {
+
     'foo namespace {
 
+      !"my comment for Structur1"
       'user1 struct {
-        !"my comment"
+        !"my comment for Field1 "
         'username as 'string
         'address as 'string
       }
@@ -17,6 +19,7 @@ object Application {
       'bar namespace {
         'user2 struct {
           'username2 as 'string
+          !"my comment for Field 4"
           'address_a as 'string
         }
       }
@@ -24,11 +27,13 @@ object Application {
 
     val root = Context.current.asInstanceOf[Namespace]
     val java = new Java("/home/anahitm/dev/dsl-output")
+
     root.namespaces().foreach { ns => java.generate(ns) }
     root.structures().foreach { st => java.generate(st) }
   }
 
   class Java(val outputPath: String) {
+
     var currentPath = new File(outputPath)
     var currentPackage = List[String]()
 
@@ -56,7 +61,7 @@ object Application {
 
     var writer: PrintWriter = null
     def source(name: String)(body: => Unit): Unit = {
-      writer = new PrintWriter(new File(currentPath + name.toPascal + ".java"))
+      writer = new PrintWriter(new File(currentPath, (name.toPascal + ".java")))
       body
       writer.close
     }
@@ -76,17 +81,19 @@ object Application {
       source(structure.name) {
         ln(s"package ${currentPackage.mkString(".")};")
         val structName = structure.name.toPascal
+        if (structure.comment.length() > 0) ln("\n//" + structure.comment)
         block(s"\npublic class " + structName + " {\n") {
           structure.fields foreach { f =>
             var fieldName = f.name.toCamel
+            if (f.comment.length() > 0) ln("//" + f.comment)
             ln(" private " + toStandartJavaType(f.datatype) + " " + fieldName + ";")
           }
-          for (f <- structure.fields()) {
+          structure.fields foreach { f =>
             var fieldName = f.name.toCamel
             ln(s"\n public void set$structName (" + toStandartJavaType(f.datatype) + s" $fieldName){")
             ln(s"   this.$fieldName = $fieldName;\n }")
           }
-          for (f <- structure.fields()) {
+          structure.fields foreach { f =>
             var fieldName = f.name.toCamel
             var fieldType = toStandartJavaType(f.datatype)
             ln(s"\n public $fieldType get$structName (" + fieldType + s" $fieldName){")
@@ -99,7 +106,7 @@ object Application {
   }
 }
 
-class StringEx(s: String) {
+class StringEx(val s: String) {
 
   // PascalCase
   def toPascal: String = s.split("_").map(_.capitalize).mkString("")
@@ -111,8 +118,12 @@ class StringEx(s: String) {
     else
       s
 
-  //unary operator 
-  def unary_! = new StringEx(s)
-  override def toString = s
+}
+
+class Comment(comment: String) {
+
+  def unary_! = new Comment(comment)
+  override def toString = comment
 
 }
+
