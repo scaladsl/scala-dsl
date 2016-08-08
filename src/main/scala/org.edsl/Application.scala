@@ -8,10 +8,13 @@ object Application {
   def main(args: Array[String]): Unit = {
 
     'foo namespace {
-
-      !"my comment for Structur1"
+      !"""
+      !my comment for Structur user1
+      !"""
       'user1 struct {
-        !"my comment for Field1 "
+        !"""
+        !my comment for Field username
+        !"""
         'username as 'string
         'address as 'string
       }
@@ -19,7 +22,9 @@ object Application {
       'bar namespace {
         'user2 struct {
           'username2 as 'string
-          !"my comment for Field 4"
+          !"""
+          !my comment for Field addressA
+          !"""
           'address_a as 'string
         }
       }
@@ -68,8 +73,9 @@ object Application {
 
     def block(str: String)(body: => Unit): Unit = {
       writer.write(str)
-      writer.write("\n")
+      writer.write(" {\n")
       body
+      writer.write("\n}")
     }
 
     def ln(str: String): Unit = {
@@ -81,11 +87,11 @@ object Application {
       source(structure.name) {
         ln(s"package ${currentPackage.mkString(".")};")
         val structName = structure.name.toPascal
-        if (structure.comment.length() > 0) ln("\n//" + structure.comment)
-        block(s"\npublic class " + structName + " {\n") {
+        if (structure.comment.length() > 0) ln("\n/*" + structure.comment.replace("!", " ") + "\n*/")
+        block(s"\npublic class " + structName) {
           structure.fields foreach { f =>
             var fieldName = f.name.toCamel
-            if (f.comment.length() > 0) ln("//" + f.comment)
+            if (f.comment.length() > 0) ln("/*" + f.comment.replace("!", " ") + "\n*/")
             ln(" private " + toStandartJavaType(f.datatype) + " " + fieldName + ";")
           }
           structure.fields foreach { f =>
@@ -99,31 +105,8 @@ object Application {
             ln(s"\n public $fieldType get$structName (" + fieldType + s" $fieldName){")
             ln(s"   return $fieldName;\n }")
           }
-          ln("\n}")
         }
       }
     }
   }
 }
-
-class StringEx(val s: String) {
-
-  // PascalCase
-  def toPascal: String = s.split("_").map(_.capitalize).mkString("")
-
-  // camelCase
-  def toCamel: String =
-    if (s.length > 0)
-      toPascal.substring(0, 1).toLowerCase + toPascal.substring(1)
-    else
-      s
-
-}
-
-class Comment(comment: String) {
-
-  def unary_! = new Comment(comment)
-  override def toString = comment
-
-}
-

@@ -1,9 +1,11 @@
 package org.edsl
 
 import scala.language.implicitConversions
+
 object DSL {
 
   var comment = ""
+
   def resolve(name: String): SimpleType = {
     null
   }
@@ -14,13 +16,9 @@ object DSL {
     Identifier(symbol, c)
   }
 
-  implicit def stringToExString(string: String): StringEx = {
+  implicit def stringToStringEx(string: String): StringEx = {
+    comment = string
     new StringEx(string)
-  }
-
-  implicit def stringToUnary(com: String): Comment = {
-    comment = com
-    new Comment(com)
   }
 
 }
