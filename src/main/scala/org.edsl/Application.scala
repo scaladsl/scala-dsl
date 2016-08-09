@@ -9,23 +9,23 @@ object Application {
 
     'foo namespace {
       !"""
-      !my comment for Structur user1
-      !"""
+      my comment for Structur user1 
+      """
       'user1 struct {
         !"""
         !my comment for Field username
         !"""
-        'username as 'string
-        'address as 'string
+        'username required 'int
+        'address required 'string
       }
 
       'bar namespace {
         'user2 struct {
-          'username2 as 'string
+          'username2 required 'string
           !"""
           !my comment for Field addressA
           !"""
-          'address_a as 'string
+          'address_a optional 'string
         }
       }
     }
@@ -38,6 +38,10 @@ object Application {
   }
 
   class Java(val outputPath: String) {
+
+    private val NEWLINE = "\n"
+    private val INDENT = "  "
+    private var indentLevel = 0
 
     var currentPath = new File(outputPath)
     var currentPackage = List[String]()
@@ -52,7 +56,7 @@ object Application {
       currentPackage = currentPackage diff List(namespace.name)
     }
 
-    def toStandartJavaType(datatype: String): String = {
+    def toJavaType(datatype: String): String = {
       datatype match {
         case "int" => "int"
         case "long" => "long"
@@ -72,41 +76,75 @@ object Application {
     }
 
     def block(str: String)(body: => Unit): Unit = {
+      writer.write(indentation())
       writer.write(str)
-      writer.write(" {\n")
+      writer.write(" {")
+      writer.write(NEWLINE)
+
+      indentLevel += 1
       body
-      writer.write("\n}")
+      indentLevel -= 1
+
+      writer.write(indentation())
+      writer.write("}")
+      writer.write(NEWLINE)
     }
 
-    def ln(str: String): Unit = {
+    def ln(str: String = ""): Unit = {
+      writer.write(indentation())
       writer.write(str)
-      writer.write("\n")
+      writer.write(NEWLINE)
+    }
+
+    def doc(comment: String): Unit = {
+      ln()
+      if (comment.length() > 0) {
+        var lines = comment.replaceAll("\\n\\s*!", "\n").split("\n")
+        if (lines(0).trim == "")
+          lines = lines.slice(1, lines.length)
+
+        ln("/**")
+        lines foreach { s => ln(" * " + s) }
+        ln(" */")
+      }
     }
 
     def generate(structure: Structure): Unit = {
       source(structure.name) {
         ln(s"package ${currentPackage.mkString(".")};")
         val structName = structure.name.toPascal
-        if (structure.comment.length() > 0) ln("\n/*" + structure.comment.replace("!", " ") + "\n*/")
-        block(s"\npublic class " + structName) {
+
+        ln()
+        block(s"public class " + structName) {
           structure.fields foreach { f =>
             var fieldName = f.name.toCamel
-            if (f.comment.length() > 0) ln("/*" + f.comment.replace("!", " ") + "\n*/")
-            ln(" private " + toStandartJavaType(f.datatype) + " " + fieldName + ";")
+            ln(s"private ${toJavaType(f.datatype)} $fieldName;")
           }
+
           structure.fields foreach { f =>
-            var fieldName = f.name.toCamel
-            ln(s"\n public void set$structName (" + toStandartJavaType(f.datatype) + s" $fieldName){")
-            ln(s"   this.$fieldName = $fieldName;\n }")
-          }
-          structure.fields foreach { f =>
-            var fieldName = f.name.toCamel
-            var fieldType = toStandartJavaType(f.datatype)
-            ln(s"\n public $fieldType get$structName (" + fieldType + s" $fieldName){")
-            ln(s"   return $fieldName;\n }")
+            val aname = f.name.toCamel
+            val fname = f.name.toPascal
+            val ftype = toJavaType(f.datatype)
+
+            doc(f.comment)
+            block(s"public $ftype get$fname($ftype $aname)") {
+              ln(s"return $aname;")
+            }
+
+            doc(f.comment)
+            block(s"public void set$fname($ftype $aname)") {
+              block(s"if ( $aname == null )") {
+                ln(s"""throw new IllegalArgumentException("$aname");""")
+              }
+              ln(s"this.$aname = $aname;")
+            }
           }
         }
       }
+    }
+
+    private def indentation(): String = {
+      INDENT * indentLevel
     }
   }
 }
