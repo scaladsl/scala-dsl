@@ -9,19 +9,19 @@ object Application {
 
     'foo namespace {
       !"""
-      my comment for Structur user1 
-      """
+      !my comment for Structur user1 
+      !"""
       'user1 struct {
         !"""
         !my comment for Field username
         !"""
-        'username required 'int
-        'address required 'string
+        'username repeated 'int
+        'address repeated 'string
       }
 
       'bar namespace {
         'user2 struct {
-          'username2 required 'string
+          'username2 repeated 'string
           !"""
           !my comment for Field addressA
           !"""
@@ -56,7 +56,7 @@ object Application {
       currentPackage = currentPackage diff List(namespace.name)
     }
 
-    def toJavaType(datatype: String): String = {
+    def toJavaType(datatype: String): String = { 
       datatype match {
         case "int" => "int"
         case "long" => "long"
@@ -76,7 +76,7 @@ object Application {
     }
 
     def block(str: String)(body: => Unit): Unit = {
-      writer.write(indentation())
+      writer.write(indentation)
       writer.write(str)
       writer.write(" {")
       writer.write(NEWLINE)
@@ -85,20 +85,20 @@ object Application {
       body
       indentLevel -= 1
 
-      writer.write(indentation())
+      writer.write(indentation)
       writer.write("}")
       writer.write(NEWLINE)
     }
 
     def ln(str: String = ""): Unit = {
-      writer.write(indentation())
+      writer.write(indentation)
       writer.write(str)
       writer.write(NEWLINE)
     }
 
     def doc(comment: String): Unit = {
       ln()
-      if (comment.length() > 0) {
+      if (comment != null && comment.length() > 0) {
         var lines = comment.replaceAll("\\n\\s*!", "\n").split("\n")
         if (lines(0).trim == "")
           lines = lines.slice(1, lines.length)
@@ -113,8 +113,7 @@ object Application {
       source(structure.name) {
         ln(s"package ${currentPackage.mkString(".")};")
         val structName = structure.name.toPascal
-
-        ln()
+        doc(structure.comment)
         block(s"public class " + structName) {
           structure.fields foreach { f =>
             var fieldName = f.name.toCamel
@@ -143,7 +142,7 @@ object Application {
       }
     }
 
-    private def indentation(): String = {
+    private def indentation: String = {
       INDENT * indentLevel
     }
   }

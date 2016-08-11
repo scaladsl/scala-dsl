@@ -5,8 +5,7 @@ package org.edsl
  *
  * @param name Structure name.
  */
-class Structure(name: String, comment: String) extends Entity(name, comment) with Container {
-
+class Structure(name: String, parent: Entity) extends Entity(name, parent) with Container {
   protected var items = List[Entity]()
 
   /**

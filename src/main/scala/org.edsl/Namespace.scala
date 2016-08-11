@@ -7,7 +7,7 @@ import scala.collection.immutable.List
  *
  * @param name Namespace name.
  */
-class Namespace(name: String, comment: String) extends Entity(name, comment) with Container {
+class Namespace(name: String, parent: Entity) extends Entity(name, parent) with Container {
 
   protected var items = List[Entity]()
 
