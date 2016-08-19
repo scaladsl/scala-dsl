@@ -4,10 +4,6 @@ import scala.language.implicitConversions
 
 object DSL {
 
-  def resolve(name: String): Datatype = {
-    null
-  }
-
   implicit def symbolToIdentifier(symbol: Symbol): Identifier = Identifier(symbol)
 
   /**

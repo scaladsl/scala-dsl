@@ -1,14 +1,54 @@
 package org.edsl
 
-import scala.collection.mutable.Stack
-
-
 object Context {
-  private val stack = Stack[Entity]()
-  stack.push(new Namespace("__root__", null))
+  val global = new Namespace(new Identifier('__global__))
+  global :+ Integer
+  global :+ String
+  global :+ Boolean
+  global :+ Float
 
-  def enter(container: Entity) = stack.push(container)
-  def leave() = stack.pop
-  def current() = stack.top
-  def add(entity: Entity) = current.asInstanceOf[Container] :+ entity
+  var leaf: Container = global
+
+  def current(): Container = leaf
+
+  def newNamespace(id: Identifier)(body: Namespace => Unit): Unit = {
+    val namespace = new Namespace(id)
+    namespace.parent = current
+
+    current :+ namespace
+
+    leaf = namespace
+    body(namespace)
+    leaf = namespace.parent
+  }
+
+  def newStructure(id: Identifier)(body: Structure => Unit): Unit = {
+    val structure = new Structure(id)
+    structure.parent = current
+
+    current :+ structure
+
+    leaf = structure
+    body(structure)
+    leaf = structure.parent
+  }
+
+  def newEnumeration(id: Identifier)(body: Enumeration => Unit): Unit = {
+    val enumeration = new Enumeration(id)
+    enumeration.parent = current
+
+    current :+ enumeration
+
+    leaf = enumeration
+    body(enumeration)
+    leaf = enumeration.parent
+  }
+
+  def newField(name: Identifier, modifier: Modifier, id: Identifier): Unit = {
+    assert(current.isInstanceOf[Structure])
+    val datatype = current.parent.resolve(id)
+    val field = new Field(name, modifier, datatype)
+    field.comment = Comment.reset()
+    current :+ field
+  }
 }
