@@ -14,9 +14,13 @@ abstract class Entity(val id: Identifier) {
 
   var comment: String = ""
 
-  def parents(): List[Entity] = {
-    null // TODO
+  
+  def path(): List[Entity] = {
+    if ( parent == Context.global ) {
+      List(this)
+    } else {
+      val p = parent.asInstanceOf[Entity]
+      p.path :+ this
+    }
   }
-
-  def qualifiedName(): List[Identifier] = parents.map(_.id) ::: List(id)
 }

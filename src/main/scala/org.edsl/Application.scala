@@ -37,14 +37,14 @@ object Application {
         }
  
         'login_reply struct {
-          'user1 optional 'int 
+          'user1 optional 'login_request
           //'foo::'services::'user // X => Array[Identifier]
         }
       }
     }
 
     val root = Context.current.asInstanceOf[Namespace]
-    val java = new Java("/home/anahitm/dev/dsl-output")
+    val java = new Java("/home/nqq/dev/entity-dsl/temp")
     root.namespaces().foreach { ns => java.generate(ns) }
     root.structures().foreach { st => java.generate(st) }
   }
@@ -97,39 +97,31 @@ object Application {
       writer.write(NEWLINE)
     }
 
-    /**
-     *
-     */
-    def toJavaType(f: Field): String = {
+    def asJava(datatype: Datatype): String = {
+      if ( datatype == null )
+        throw new IllegalArgumentException("Datatype is not specified.");
+      datatype match {
+        case Integer => "java.util.Integer"
+        case String => "java.String"
+        case Boolean => "java.util.Boolean"
+        case Float => "java.util.Double"
+        case Date => "java.util.Date"
+        case _: Enumeration => datatype.path.map(e => if ( e.isInstanceOf[Namespace] ) e.id.toCamel else e.id.toPascal).mkString(".")
+        case _: Structure => datatype.path.map(e => if ( e.isInstanceOf[Namespace] ) e.id.toCamel else e.id.toPascal).mkString(".")
+        case _ => throw new IllegalArgumentException(s"Invalid datatype: ${datatype.getClass}");
+      }
+    }
 
-      f.datatype.id.name() match {
-        case "int" => f.modifier match {
-          case  Modifier.REQ => "int"
-          case  Modifier.REP => "List<Integer>"
-          case  Modifier.OPT => "Integer"
-        }
-        case "string" => f.modifier match {
-          case  Modifier.REQ => "String"
-          case  Modifier.REP => "List<String>"
-          case  Modifier.OPT => "String"
-        }
-        case "bool" => f.modifier match {
-          case  Modifier.REQ => "boolean"
-          case  Modifier.REP => "List<Boolean>"
-          case  Modifier.OPT => "Boolean"
-        }
-        case "date" => f.modifier match {
-          case  Modifier.REQ => "Date"
-          case  Modifier.REP => "List<Date>"
-          case  Modifier.OPT => "Date"
-        }
-        case "float" => f.modifier match {
-          case  Modifier.REQ => "double"
-          case  Modifier.REP => "List<Double>"
-          case  Modifier.OPT => "Double"
-        }
-        case t => throw new IllegalArgumentException(s"Invalid DSL type: $t")
-     }
+    def asRequired(datatype: Datatype): String = asJava(datatype)
+    def asOptional(datatype: Datatype): String = s"java.util.Optional<${asJava(datatype)}>"
+    def asRepeated(datatype: Datatype): String = s"java.util.List<${asJava(datatype)}>"
+
+    def fieldType(field: Field): String = {
+      field.modifier match {
+        case  Modifier.REQ => asRequired(field.datatype)
+        case  Modifier.OPT => asOptional(field.datatype)
+        case  Modifier.REP => asRepeated(field.datatype)
+      }
     }
 
     def doc(comment: String): Unit = {
@@ -152,27 +144,26 @@ object Application {
         val structName = structure.id.toPascal
         doc(structure.comment)
         block(s"public class " + structName) {
-          structure.fields foreach { f =>
-            var fieldName = f.id.toCamel()
-            val ftype = toJavaType(f)
-            ln(s"private $ftype $fieldName;")
-          }
+          structure.fields.foreach(f =>
+            ln(s"private ${fieldType(f)} ${f.id.toCamel()};"))
 
           structure.fields foreach { f =>
             val aname = f.id.toCamel
             val fname = f.id.toPascal
-            val ftype = toJavaType(f)
+            val ftype = fieldType(f)
             doc(f.comment)
             block(s"public $ftype get$fname($ftype $aname)") {
               ln(s"return $aname;")
             }
 
-            doc(f.comment)
-            block(s"public void set$fname($ftype $aname)") {
-              block(s"if ($aname == null)") {
-                ln(s"""throw new IllegalArgumentException("$aname");""")
+            if ( !f.isRepeated ) {
+              doc(f.comment)
+              block(s"public void set$fname($ftype $aname)") {
+                block(s"if ($aname == null)") {
+                  ln(s"""throw new IllegalArgumentException("$aname");""")
+                }
+                ln(s"this.$aname = $aname;")
               }
-              ln(s"this.$aname = $aname;")
             }
           }
         }
