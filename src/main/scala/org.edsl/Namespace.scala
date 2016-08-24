@@ -5,9 +5,8 @@ import scala.collection.immutable.List
 /**
  * Represents a namespace node in abstract syntax tree.
  *
- * @param name Namespace name.
  */
-class Namespace(name: String, comment: String) extends Entity(name, comment) with Container {
+class Namespace(id: Identifier) extends Entity(id) with Container {
 
   protected var items = List[Entity]()
 
@@ -15,6 +14,11 @@ class Namespace(name: String, comment: String) extends Entity(name, comment) wit
    * Gets all the structures within this namespace.
    */
   def structures(): List[Structure] = filter[Structure]
+
+  /**
+   * Gets all the enumerations within this one.
+   */
+  def enumerations(): List[Enumeration] = filter[Enumeration]
 
   /**
    * Gets all the namespaces within this one.

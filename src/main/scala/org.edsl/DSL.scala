@@ -4,20 +4,11 @@ import scala.language.implicitConversions
 
 object DSL {
 
-  def resolve(name: String): SimpleType = {
-    null
-  }
+  implicit def symbolToIdentifier(symbol: Symbol): Identifier = Identifier(symbol)
 
-  implicit def symbolToIdentifier(symbol: Symbol): Identifier = {
-    Identifier(symbol)
-  }
-  /*
-  implicit def stringToExString(string: String): StringEx = {
-    StringEx(string)
-  }
-
-implicit def stringToUnary(comment: String): Comment = {
-    new Comment(comment)
-  }*/
+  /**
+    * TODO: 
+    */
+  implicit def stringToStringEx(string: String): StringEx = new StringEx(string)
 
 }

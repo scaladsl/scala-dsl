@@ -1,9 +1,22 @@
 package org.edsl
 
 /**
- * Represents a class Entity.
+ * The class representing a node in abstract syntax tree.
  *
- * @param name: Entity name.
+ * @param id Entity identity.
  */
-class Entity(val name: String,  val comment: String){
+abstract class Entity(val id: Identifier) {
+
+  /**
+    * 
+    */
+  var parent: Container = null
+
+  var comment: String = ""
+
+  def parents(): List[Entity] = {
+    null // TODO
+  }
+
+  def qualifiedName(): List[Identifier] = parents.map(_.id) ::: List(id)
 }
