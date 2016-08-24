@@ -51,4 +51,12 @@ object Context {
     field.comment = Comment.reset()
     current :+ field
   }
+//
+  def newConstant(name: Identifier, value: Int): Unit = {
+    assert(current.isInstanceOf[Enumeration])
+    val econst = new Constant(name, value)
+    econst.comment = Comment.reset()
+    current :+ econst
+  }
+ // 
 }

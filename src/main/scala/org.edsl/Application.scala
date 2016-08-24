@@ -29,15 +29,20 @@ object Application {
         'surname  optional 'string
       }
 
+      'phone_number enum  {
+        'beeline  is 99777888 
+        'vivacell is 96888777
+       }
+
       'authentication namespace {
 
         'login_request struct {
           'username required 'string
           'password required 'string
         }
- 
+       
         'login_reply struct {
-          'user1 optional 'login_request
+          'user1 optional 'user
           //'foo::'services::'user // X => Array[Identifier]
         }
       }
@@ -45,8 +50,9 @@ object Application {
 
     val root = Context.current.asInstanceOf[Namespace]
     val java = new Java("/home/nqq/dev/entity-dsl/temp")
-    root.namespaces().foreach { ns => java.generate(ns) }
-    root.structures().foreach { st => java.generate(st) }
+    root.namespaces().foreach   { ns => java.generate(ns) }
+    root.structures().foreach   { st => java.generate(st) }
+    root.enumerations().foreach { en => java.generate(en) }
   }
 
   // Generator
@@ -63,8 +69,9 @@ object Application {
       currentPath = new File(currentPath, namespace.id.name())
       currentPath.mkdir()
       currentPackage = currentPackage :+ namespace.id.name()
-      namespace.namespaces().foreach { generate }
-      namespace.structures().foreach { generate }
+      namespace.namespaces().foreach   { generate }
+      namespace.structures().foreach   { generate }
+      namespace.enumerations().foreach { generate }
       currentPath = currentPath.getParentFile
       currentPackage = currentPackage diff List(namespace.id.name())
     }
@@ -163,6 +170,32 @@ object Application {
                   ln(s"""throw new IllegalArgumentException("$aname");""")
                 }
                 ln(s"this.$aname = $aname;")
+              }
+            }
+          }
+        }
+      }
+    }
+
+    def generate(enum: Enumeration): Unit = {
+      source(enum.id) {
+        ln(s"package ${currentPackage.mkString(".")};")
+
+        val enumName = enum.id.toPascal
+        doc(enum.comment)
+        block(s"public enum " + enumName) {
+          ln(enum.constants.map(e => s"${e.id.toUpper}(${e.value})").mkString(", ") + ";")
+          ln(s"private int val;")
+          block(s"private PhoneNumber(int value)"){
+            ln("val = value;")
+          }
+          block("public int value()"){
+            ln("return val;")
+          }
+          block("static PhoneNumber fromValue(int value)"){
+            block("switch ( value )"){
+              enum.constants.foreach { e =>
+                ln(s"case ${e.value}: ${e.id.toUpper}")
               }
             }
           }

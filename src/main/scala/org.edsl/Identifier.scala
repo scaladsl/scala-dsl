@@ -10,6 +10,8 @@ case class Identifier(symbol: Symbol) {
 
   def toKebab() = name
 
+  def toUpper() = name.toUpperCase 
+
   def namespace(body: => Unit) = {
     assert(Context.current.isInstanceOf[Namespace])
 
@@ -25,7 +27,19 @@ case class Identifier(symbol: Symbol) {
       body
     }
   }
+//
+  def enum(body: => Unit) = {
+    assert(Context.current.isInstanceOf[Namespace])
 
+    Context.newEnumeration(this) { en =>
+      body
+    }
+  }
+
+  def is(value: Int) = {
+    Context.newConstant(this, value)
+  }
+//
   def required(datatypeId: Identifier) = {
     Context.newField(this, Modifier.REQ, datatypeId)
   }
