@@ -3,17 +3,17 @@ package org.edsl
 /**
   * The class representing type defined in SDL. 
   */
-abstract class Datatype(id: Identifier) extends Entity(id)
+abstract class Datatype(id: Identity) extends Entity(id)
 
 // primitives
-class Primitive(id: Identifier) extends Datatype(id) { parent = Context.global }
-object Integer extends Primitive(new Identifier('int))
-object Boolean extends Primitive(new Identifier('bool))
-object Float   extends Primitive(new Identifier('float))
-object String  extends Primitive(new Identifier('string))
-object Date    extends Primitive(new Identifier('date))
+class Primitive(id: Identity) extends Datatype(id) { parent = Context.global }
+object Integer extends Primitive(new Identity('int))
+object Boolean extends Primitive(new Identity('bool))
+object Float   extends Primitive(new Identity('float))
+object String  extends Primitive(new Identity('string))
+object Date    extends Primitive(new Identity('date))
 
-class Composite(id: Identifier) extends Datatype(id)
+class Composite(id: Identity) extends Datatype(id)
 
 /**
   * The class representing a structure described in SDL.
@@ -21,7 +21,7 @@ class Composite(id: Identifier) extends Datatype(id)
   * @param id     Structure identity.
   * @param parent Parent entity.
   */
-class Structure(id: Identifier) extends Composite(id) with Container {
+class Structure(id: Identity) extends Composite(id) with Container {
   protected var items = List[Entity]()
 
   /**
@@ -33,7 +33,7 @@ class Structure(id: Identifier) extends Composite(id) with Container {
 /**
   * The class representing a constant within enumeration.
   */
-class Constant(id: Identifier, val value: Int) extends Entity(id)
+class Constant(id: Identity, val value: Int) extends Entity(id)
 
 /**
   * The class representing enumeration described in SDL.
@@ -41,7 +41,7 @@ class Constant(id: Identifier, val value: Int) extends Entity(id)
   * @param id     Enumeration identity.
   * @param parent Parent entity.
   */
-class Enumeration(id: Identifier) extends Composite(id) with Container {
+class Enumeration(id: Identity) extends Composite(id) with Container {
   protected var items = List[Entity]()
  
   /**
@@ -49,5 +49,3 @@ class Enumeration(id: Identifier) extends Composite(id) with Container {
    */
   def constants(): List[Constant] = filter[Constant]
 }
-
-

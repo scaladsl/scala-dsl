@@ -24,34 +24,37 @@ object Application {
     'services namespace {
 
       'user struct {
-        'username repeated 'string
-        'forename optional 'string
-        'surname  optional 'string
+        'forename repeated 'string
+        'surname optional 'string
       }
 
-      'phone_number enum  {
-        'beeline  is 99777888 
+      'phone_number enum {
+        'beeline is 99777888
         'vivacell is 96888777
-       }
+      }
 
       'authentication namespace {
 
+        'user struct {
+          'forename required 'string
+          'surname required 'string
+        }
+
         'login_request struct {
-          'username required 'string
+          'username optional 'bool
           'password required 'string
         }
-       
+
         'login_reply struct {
-          'user1 optional 'user
-          //'foo::'services::'user // X => Array[Identifier]
+         'user1 required 'services::'authentication::'user
         }
       }
     }
 
     val root = Context.current.asInstanceOf[Namespace]
-    val java = new Java("/home/nqq/dev/entity-dsl/temp")
-    root.namespaces().foreach   { ns => java.generate(ns) }
-    root.structures().foreach   { st => java.generate(st) }
+    val java = new Java("/home/anahitm/dev/dsl-output")
+    root.namespaces().foreach { ns => java.generate(ns) }
+    root.structures().foreach { st => java.generate(st) }
     root.enumerations().foreach { en => java.generate(en) }
   }
 
@@ -69,15 +72,15 @@ object Application {
       currentPath = new File(currentPath, namespace.id.name())
       currentPath.mkdir()
       currentPackage = currentPackage :+ namespace.id.name()
-      namespace.namespaces().foreach   { generate }
-      namespace.structures().foreach   { generate }
+      namespace.namespaces().foreach { generate }
+      namespace.structures().foreach { generate }
       namespace.enumerations().foreach { generate }
       currentPath = currentPath.getParentFile
       currentPackage = currentPackage diff List(namespace.id.name())
     }
 
     var writer: PrintWriter = null
-    def source(name: Identifier)(body: => Unit): Unit = {
+    def source(name: Identity)(body: => Unit): Unit = {
       writer = new PrintWriter(new File(currentPath, (name.toPascal + ".java")))
       body
       writer.close
@@ -105,29 +108,30 @@ object Application {
     }
 
     def asJava(datatype: Datatype): String = {
-      if ( datatype == null )
+      if (datatype == null)
         throw new IllegalArgumentException("Datatype is not specified.");
       datatype match {
-        case Integer => "java.util.Integer"
-        case String => "java.String"
-        case Boolean => "java.util.Boolean"
-        case Float => "java.util.Double"
-        case Date => "java.util.Date"
-        case _: Enumeration => datatype.path.map(e => if ( e.isInstanceOf[Namespace] ) e.id.toCamel else e.id.toPascal).mkString(".")
-        case _: Structure => datatype.path.map(e => if ( e.isInstanceOf[Namespace] ) e.id.toCamel else e.id.toPascal).mkString(".")
+        case Integer => "Integer"
+        case String => "String"
+        case Boolean => "Boolean"
+        case Float => "Double"
+        case Date => "Date"
+        case _: Enumeration => datatype.path.map(e => if (e.isInstanceOf[Namespace]) e.id.toCamel else e.id.toPascal).mkString(".")
+        case _: Structure   => datatype.path.map(e => if (e.isInstanceOf[Namespace]) e.id.toCamel else e.id.toPascal).mkString(".")
+        case _: Datatype   => datatype + ""
         case _ => throw new IllegalArgumentException(s"Invalid datatype: ${datatype.getClass}");
       }
     }
 
     def asRequired(datatype: Datatype): String = asJava(datatype)
-    def asOptional(datatype: Datatype): String = s"java.util.Optional<${asJava(datatype)}>"
-    def asRepeated(datatype: Datatype): String = s"java.util.List<${asJava(datatype)}>"
+    def asOptional(datatype: Datatype): String = s"Optional<${asJava(datatype)}>"
+    def asRepeated(datatype: Datatype): String = s"List<${asJava(datatype)}>"
 
     def fieldType(field: Field): String = {
       field.modifier match {
-        case  Modifier.REQ => asRequired(field.datatype)
-        case  Modifier.OPT => asOptional(field.datatype)
-        case  Modifier.REP => asRepeated(field.datatype)
+        case Modifier.REQ => asRequired(field.datatype)
+        case Modifier.OPT => asOptional(field.datatype)
+        case Modifier.REP => asRepeated(field.datatype)
       }
     }
 
@@ -147,6 +151,14 @@ object Application {
     def generate(structure: Structure): Unit = {
       source(structure.id) {
         ln(s"package ${currentPackage.mkString(".")};")
+        var mod: collection.immutable.Set[String] = Set()
+        var types: collection.immutable.Set[String] = Set()
+        structure.fields.foreach{f =>
+          mod += f.modifier.id.name.capitalize
+           if(f.datatype.isInstanceOf[Primitive]) types += asJava(f.datatype)
+        }
+        mod.foreach   {f => if(f != "Required") ln(s"import java.util.$f") }
+        types.foreach {f => if(f == "String")   ln(s"import java.$f") else ln(s"import java.util.$f") }
 
         val structName = structure.id.toPascal
         doc(structure.comment)
@@ -163,7 +175,7 @@ object Application {
               ln(s"return $aname;")
             }
 
-            if ( !f.isRepeated ) {
+            if (!f.isRepeated) {
               doc(f.comment)
               block(s"public void set$fname($ftype $aname)") {
                 block(s"if ($aname == null)") {
@@ -186,14 +198,14 @@ object Application {
         block(s"public enum " + enumName) {
           ln(enum.constants.map(e => s"${e.id.toUpper}(${e.value})").mkString(", ") + ";")
           ln(s"private int val;")
-          block(s"private PhoneNumber(int value)"){
+          block(s"private PhoneNumber(int value)") {
             ln("val = value;")
           }
-          block("public int value()"){
+          block("public int value()") {
             ln("return val;")
           }
-          block("static PhoneNumber fromValue(int value)"){
-            block("switch ( value )"){
+          block("static PhoneNumber fromValue(int value)") {
+            block("switch ( value )") {
               enum.constants.foreach { e =>
                 ln(s"case ${e.value}: ${e.id.toUpper}")
               }

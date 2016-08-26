@@ -1,7 +1,7 @@
 package org.edsl
 
 object Context {
-  val global = new Namespace(new Identifier('__global__))
+  val global = new Namespace(new Identity('__global__))
   global :+ Integer
   global :+ String
   global :+ Boolean
@@ -11,7 +11,7 @@ object Context {
 
   def current(): Container = leaf
 
-  def newNamespace(id: Identifier)(body: Namespace => Unit): Unit = {
+  def newNamespace(id: Identity)(body: Namespace => Unit): Unit = {
     val namespace = new Namespace(id)
     namespace.parent = current
 
@@ -22,7 +22,7 @@ object Context {
     leaf = namespace.parent
   }
 
-  def newStructure(id: Identifier)(body: Structure => Unit): Unit = {
+  def newStructure(id: Identity)(body: Structure => Unit): Unit = {
     val structure = new Structure(id)
     structure.parent = current
 
@@ -33,7 +33,7 @@ object Context {
     leaf = structure.parent
   }
 
-  def newEnumeration(id: Identifier)(body: Enumeration => Unit): Unit = {
+  def newEnumeration(id: Identity)(body: Enumeration => Unit): Unit = {
     val enumeration = new Enumeration(id)
     enumeration.parent = current
 
@@ -44,19 +44,18 @@ object Context {
     leaf = enumeration.parent
   }
 
-  def newField(name: Identifier, modifier: Modifier, id: Identifier): Unit = {
+  def newField(name: Identity, modifier: Modifier, id: Identity): Unit = {
     assert(current.isInstanceOf[Structure])
     val datatype = current.parent.resolve(id)
     val field = new Field(name, modifier, datatype)
     field.comment = Comment.reset()
     current :+ field
   }
-//
-  def newConstant(name: Identifier, value: Int): Unit = {
+
+  def newConstant(name: Identity, value: Int): Unit = {
     assert(current.isInstanceOf[Enumeration])
     val econst = new Constant(name, value)
     econst.comment = Comment.reset()
     current :+ econst
   }
- // 
 }

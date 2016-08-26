@@ -15,7 +15,7 @@ trait Container {
   def filter[T <: Entity]()(implicit m: Manifest[T]): List[T] =
     items.filter(_.getClass == m.erasure.asInstanceOf[Class[T]]).asInstanceOf[List[T]]
 
-  def findById(id: Identifier): Entity = {
+  def findById(id: Identity): Entity = {
     val result = items.filter(_.id == id).headOption
     result match {
       case Some(x) => x
@@ -23,7 +23,7 @@ trait Container {
     }
   }
 
-  def resolve(id: Identifier): Datatype = {
+  def resolve(id: Identity): Datatype = {
     var result = findById(id)
     if (result == null && parent != null) {
       result = parent.asInstanceOf[Namespace].resolve(id)

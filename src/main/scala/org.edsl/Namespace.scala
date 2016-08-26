@@ -6,7 +6,7 @@ import scala.collection.immutable.List
  * Represents a namespace node in abstract syntax tree.
  *
  */
-class Namespace(id: Identifier) extends Entity(id) with Container {
+class Namespace(id: Identity) extends Entity(id) with Container {
 
   protected var items = List[Entity]()
 

@@ -1,6 +1,6 @@
 package org.edsl
 
-case class Identifier(symbol: Symbol) {
+case class Identity(symbol: Symbol) {
 
   def name() = symbol.name
 
@@ -10,7 +10,7 @@ case class Identifier(symbol: Symbol) {
 
   def toKebab() = name
 
-  def toUpper() = name.toUpperCase 
+  def toUpper() = name.toUpperCase
 
   def namespace(body: => Unit) = {
     assert(Context.current.isInstanceOf[Namespace])
@@ -27,7 +27,7 @@ case class Identifier(symbol: Symbol) {
       body
     }
   }
-//
+
   def enum(body: => Unit) = {
     assert(Context.current.isInstanceOf[Namespace])
 
@@ -39,23 +39,22 @@ case class Identifier(symbol: Symbol) {
   def is(value: Int) = {
     Context.newConstant(this, value)
   }
-//
-  def required(datatypeId: Identifier) = {
+
+  def required(datatypeId: Identity): Unit = {
     Context.newField(this, Modifier.REQ, datatypeId)
   }
 
-  /*def required(datatypeId: Array[Identifier]) = {
-    val datatype = Context.current.global.findRelative(datatypeId)
-    Context.newField(this, datatypeId, Modifier.REQ)
-  }*/
-
-  def optional(datatypeId: Identifier) = {
-    Context.newField(this, Modifier.OPT, datatypeId)
+  def required(datatypeId: List[Identity]): Unit = {
+    
   }
 
-  def repeated(datatypeId: Identifier) = {
+  def optional(datatypeId: Identity): Unit = {
+    Context.newField(this, Modifier.REQ, datatypeId)
+  }
+
+  def repeated(datatypeId: Identity): Unit = {
     Context.newField(this, Modifier.REP, datatypeId)
   }
 
-  override def toString(): String =  name
+  override def toString(): String = name
 }
