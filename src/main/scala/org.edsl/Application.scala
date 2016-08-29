@@ -38,7 +38,7 @@ object Application {
 
         'login_reply struct {
           'user1 optional 'login_request
-          //'foo::'services::'user // X => Array[Identifier]
+           'foo::'services::'user // X => Array[Identifier]
         }
       }
     }
