@@ -26,7 +26,7 @@ object Modifier {
   * @param modifier Type modifier.
   * @param datatype Field type.
   */
-class Field(id: Identifier, val modifier: Modifier, val datatype: Datatype) extends Entity(id) {
+class Field(id: Identity, val modifier: Modifier, val datatype: Datatype) extends Entity(id) {
 
   /**
     * Idicates whether this filed is required.

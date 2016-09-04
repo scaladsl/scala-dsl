@@ -5,7 +5,7 @@ package org.edsl
  *
  * @param id Entity identity.
  */
-abstract class Entity(val id: Identifier) {
+abstract class Entity(val id: Identity) {
 
   /**
     * 
