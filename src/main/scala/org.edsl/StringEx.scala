@@ -1,5 +1,8 @@
 package org.edsl
 
+/**
+ * The class provides more properties for String
+ */
 class StringEx(val s: String) {
 
   def unary_! : Unit = {
@@ -7,6 +10,9 @@ class StringEx(val s: String) {
   }
 }
 
+/**
+ * Provides property to write comments
+ */
 object Comment {
   private var value = ""
 
@@ -19,5 +25,4 @@ object Comment {
   def append(comment: String): Unit = {
     value += comment
   }
-
 }

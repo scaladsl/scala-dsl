@@ -20,11 +20,13 @@ object Application {
 
   def main(args: Array[String]): Unit = {
 
-    // SDL
+    /**
+     *  SDL
+     */
     'services namespace {
 
       'user struct {
-        'forename repeated 'string
+        'forename_ehey repeated 'string
         'surname optional 'string
       }
 
@@ -51,14 +53,14 @@ object Application {
         }
 
         'login_reply struct {
-          'user1 repeated 'services::'authentication::'user
-          'user2 repeated 'services::'user
+          'user1 repeated 'services :: 'user
+          'user2 repeated 'user
         }
       }
     }
 
     val root = Context.current.asInstanceOf[Namespace]
-    val java = new Java("/home/dev/dsl-output")
+    val java = new Java("/home/anahitm/dev/dsl-output")
     root.namespaces().foreach { ns => java.generate(ns) }
     root.structures().foreach { st => java.generate(st) }
     root.enumerations().foreach { en => java.generate(en) }
@@ -124,7 +126,6 @@ object Application {
         case Date => "Date"
         case _: Enumeration => datatype.path.map(e => if (e.isInstanceOf[Namespace]) e.id.toCamel else e.id.toPascal).mkString(".")
         case _: Structure => datatype.path.map(e => if (e.isInstanceOf[Namespace]) e.id.toCamel else e.id.toPascal).mkString(".")
-        case _: Datatype => datatype.path.map(e => if (e.isInstanceOf[Namespace]) e.id.toCamel else e.id.toPascal).mkString(".")
         case _ => throw new IllegalArgumentException(s"Invalid datatype: ${datatype.getClass}");
       }
     }
@@ -171,6 +172,7 @@ object Application {
         block(s"public class " + structName) {
           structure.fields.foreach(f =>
             ln(s"private ${fieldType(f)} ${f.id.toCamel()};"))
+
           structure.fields foreach { f =>
             val aname = f.id.toCamel
             val fname = f.id.toPascal
@@ -203,12 +205,15 @@ object Application {
         block(s"public enum " + enumName) {
           ln(enum.constants.map(e => s"${e.id.toUpper}(${e.value})").mkString(", ") + ";")
           ln(s"private int val;")
+          ln()
           block(s"private PhoneNumber(int value)") {
             ln("val = value;")
           }
+          ln()
           block("public int value()") {
             ln("return val;")
           }
+          ln()
           block("static PhoneNumber fromValue(int value)") {
             block("switch ( value )") {
               enum.constants.foreach { e =>
