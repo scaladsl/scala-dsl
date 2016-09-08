@@ -6,14 +6,31 @@ import org.edsl.DSL._
 // > java -jar sdlc.jar -sdl /home/kikos/my-service.sdl -java /home/kikos/java.gen -out /home/kikos/output/java
 // > java -jar sdlc.jar -sdl /home/kikos/my-service.sdl -java /home/kikos/ruby.gen -out /home/kikos/output/ruby
 
-// > sdlp /home/kikos/my-service.sdl | sdlg -out /home/kikos/output/ruby /home/kikos/ruby.gen 
+// > sdlp /home/kikos/my-service.sdl | sdlg -out /home/kikos/output/ruby /home/kikos/ruby.gen
+ 
+/* IDL
+<attribute-value> ::= "<escaped-string>"
+<escaped-string> ::= any string with '\n' replaced by "\\n"
+entity-description ::=
 
-//IDL
-// BeginNamespace "foo"
-// BeginStruct "user"
-// Field Required Int "age"
-// EndStruct
-// EndNamespace
+begin <entity-type> <entity-name>
+     [set <attribute-name> <attribute-value>]
+     [entity-description]
+end
+
+namespace "--global--"
+     set comment "my top level namespace"
+begin namespace "services"
+         set comment "my nested namespace"
+         begin struct "user"
+             begin field "username"
+                 set type     "String"
+                 set modifier "required"
+             end
+         end
+     end
+end
+*/
 
 // Compiler - SDLC
 object Application {
@@ -26,8 +43,8 @@ object Application {
     'services namespace {
 
       'user struct {
-        'forename_ehey repeated 'string
-        'surname optional 'string
+        'forename required 'string
+        'surname required 'string
       }
 
       'phone_number enum {
@@ -48,22 +65,23 @@ object Application {
         }
 
         'login_request struct {
-          'username optional 'bool
+          'username required 'string
           'password required 'string
         }
 
         'login_reply struct {
-          'user1 repeated 'services :: 'user
-          'user2 repeated 'user
+          'user1 required 'services :: 'user
+          'user2 required 'user
         }
       }
     }
 
     val root = Context.current.asInstanceOf[Namespace]
     val java = new Java("/home/anahitm/dev/dsl-output")
-    root.namespaces().foreach { ns => java.generate(ns) }
-    root.structures().foreach { st => java.generate(st) }
-    root.enumerations().foreach { en => java.generate(en) }
+    root.namespaces().foreach   { ns => java.generate(ns)}
+    root.structures().foreach   { st => java.generate(st)}
+    root.enumerations().foreach { en =>  java.generate(en)}
+
   }
 
   // Generator

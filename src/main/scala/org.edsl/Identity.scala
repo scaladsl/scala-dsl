@@ -37,9 +37,10 @@ case class Identity(symbol: Symbol) {
    */
   def namespace(body: => Unit) = {
     assert(Context.current.isInstanceOf[Namespace])
-
+         
     Context.newNamespace(this) { ns =>
       body
+    print("end\n")   //added 
     }
   }
 
