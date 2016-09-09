@@ -7,7 +7,7 @@ import org.edsl.DSL._
 // > java -jar sdlc.jar -sdl /home/kikos/my-service.sdl -java /home/kikos/ruby.gen -out /home/kikos/output/ruby
 
 // > sdlp /home/kikos/my-service.sdl | sdlg -out /home/kikos/output/ruby /home/kikos/ruby.gen
- 
+
 /* IDL
 <attribute-value> ::= "<escaped-string>"
 <escaped-string> ::= any string with '\n' replaced by "\\n"
@@ -42,7 +42,10 @@ object Application {
      */
     'services namespace {
 
+      !"""my comment for Structur user"""
       'user struct {
+
+        !"""my comment for Field forename"""
         'forename required 'string
         'surname required 'string
       }
@@ -78,9 +81,9 @@ object Application {
 
     val root = Context.current.asInstanceOf[Namespace]
     val java = new Java("/home/anahitm/dev/dsl-output")
-    root.namespaces().foreach   { ns => java.generate(ns)}
-    root.structures().foreach   { st => java.generate(st)}
-    root.enumerations().foreach { en =>  java.generate(en)}
+    root.namespaces().foreach { ns => java.generate(ns) }
+    root.structures().foreach { st => java.generate(st) }
+    root.enumerations().foreach { en => java.generate(en) }
 
   }
 

@@ -38,11 +38,12 @@ object Context {
    * Creates structure with specified id
    */
   def newStructure(id: Identity)(body: Structure => Unit): Unit = {
+    val structure = new Structure(id)
+    structure.comment = Comment.reset()
+    if (structure.comment != "")
+      ln(s"""set comment "${structure.comment}"""")
     block(s"""structure "${id.name}"""") {
-
-      val structure = new Structure(id)
       structure.parent = current
-
       current :+ structure
 
       leaf = structure
@@ -72,14 +73,16 @@ object Context {
    */
   def newField(name: Identity, modifier: Modifier, datatype: Datatype): Unit = {
     assert(current.isInstanceOf[Structure])
+    val field = new Field(name, modifier, datatype)
+    field.comment = Comment.reset()
 
     block(s"""field "${name.name()}"""") {
+      if (field.comment != "")
+        ln(s"""set comment "${field.comment}"""")
       ln(s"""set type = ${datatype.path.map(e => e.id).mkString(".")}""")
       ln(s"""set modifier = ${modifier.id.name}""")
     }
 
-    val field = new Field(name, modifier, datatype)
-    field.comment = Comment.reset()
     current :+ field
   }
 
@@ -89,7 +92,8 @@ object Context {
   def newConstant(name: Identity, value: Int): Unit = {
     assert(current.isInstanceOf[Enumeration])
 
-    ln(s"${name.name} = ${value}")
+    ln(s"""${name.name} = ${value}""")
+
     val econst = new Constant(name, value)
     econst.comment = Comment.reset()
     current :+ econst

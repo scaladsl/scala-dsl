@@ -40,7 +40,6 @@ case class Identity(symbol: Symbol) {
          
     Context.newNamespace(this) { ns =>
       body
-    print("end\n")   //added 
     }
   }
 
