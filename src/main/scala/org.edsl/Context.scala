@@ -41,8 +41,8 @@ object Context {
     val structure = new Structure(id)
     structure.comment = Comment.reset()
     if (structure.comment != "")
-      ln(s"""set comment "${structure.comment}"""")
-    block(s"""structure "${id.name}"""") {
+      lnn(s"""set comment "${structure.comment}"""")
+      block(s"""structure "${id.name}"""") {
       structure.parent = current
       current :+ structure
 
@@ -56,8 +56,9 @@ object Context {
    * Creates enumeration with specified id
    */
   def newEnumeration(id: Identity)(body: Enumeration => Unit): Unit = {
-    block(s"""enum "${id.name}"""") {
+      block(s"""enum "${id.name}"""") {
       val enumeration = new Enumeration(id)
+      enumeration.comment = Comment.reset()
       enumeration.parent = current
 
       current :+ enumeration
@@ -78,9 +79,9 @@ object Context {
 
     block(s"""field "${name.name()}"""") {
       if (field.comment != "")
-        ln(s"""set comment "${field.comment}"""")
-      ln(s"""set type = ${datatype.path.map(e => e.id).mkString(".")}""")
-      ln(s"""set modifier = ${modifier.id.name}""")
+        lnn(s"""set comment "${field.comment}"""")
+      lnn(s"""set type = ${datatype.path.map(e => e.id).mkString(".")}""")
+      lnn(s"""set modifier = ${modifier.id.name}""")
     }
 
     current :+ field
@@ -92,7 +93,7 @@ object Context {
   def newConstant(name: Identity, value: Int): Unit = {
     assert(current.isInstanceOf[Enumeration])
 
-    ln(s"""${name.name} = ${value}""")
+    lnn(s"""${name.name} = ${value}""")
 
     val econst = new Constant(name, value)
     econst.comment = Comment.reset()
@@ -118,7 +119,7 @@ object Context {
     println("end")
   }
 
-  def ln(str: String = ""): Unit = {
+  def lnn(str: String = ""): Unit = {
     print(indentation)
     println(str)
   }

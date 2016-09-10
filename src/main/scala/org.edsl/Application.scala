@@ -42,36 +42,48 @@ object Application {
      */
     'services namespace {
 
-      !"""my comment for Structur user"""
       'user struct {
 
-        !"""my comment for Field forename"""
+        !"""
+         !my comment 1-2
+	"""
         'forename required 'string
+	!"""
+         !my comment 1-3
+	"""
+	 'su58rname required 'string
         'surname required 'string
       }
-
+	!"""
+         !my comment 2
+	"""
       'phone_number enum {
         'beeline is 99777888
         'vivacell is 96888777
       }
 
-      'user struct {
-        'forename required 'string
-        'surname required 'string
-      }
 
       'authentication namespace {
-
+	!"""
+         !my comment 4
+	"""
         'user struct {
+	!"""
+         !my comment 4-1
+	"""
           'forename required 'string
           'surname required 'string
         }
-
+	!"""
+         !my comment 5
+	"""
         'login_request struct {
           'username required 'string
           'password required 'string
         }
-
+	!"""
+         !my comment 6
+	"""
         'login_reply struct {
           'user1 required 'services :: 'user
           'user2 required 'user
@@ -80,7 +92,7 @@ object Application {
     }
 
     val root = Context.current.asInstanceOf[Namespace]
-    val java = new Java("/home/anahitm/dev/dsl-output")
+    val java = new Java("/home/ishkhan/Documents/entity-dsl/dsl-output")
     root.namespaces().foreach { ns => java.generate(ns) }
     root.structures().foreach { st => java.generate(st) }
     root.enumerations().foreach { en => java.generate(en) }
