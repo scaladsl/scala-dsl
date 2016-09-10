@@ -41,7 +41,7 @@ object Context {
     val structure = new Structure(id)
     structure.comment = Comment.reset()
     if (structure.comment != "")
-      lnn(s"""set comment "${structure.comment}"""")
+      ln(s"""set comment "${structure.comment}"""")
       block(s"""structure "${id.name}"""") {
       structure.parent = current
       current :+ structure
@@ -79,9 +79,9 @@ object Context {
 
     block(s"""field "${name.name()}"""") {
       if (field.comment != "")
-        lnn(s"""set comment "${field.comment}"""")
-      lnn(s"""set type = ${datatype.path.map(e => e.id).mkString(".")}""")
-      lnn(s"""set modifier = ${modifier.id.name}""")
+        ln(s"""set comment "${field.comment}"""")
+      ln(s"""set type = ${datatype.path.map(e => e.id).mkString(".")}""")
+      ln(s"""set modifier = ${modifier.id.name}""")
     }
 
     current :+ field
@@ -93,7 +93,7 @@ object Context {
   def newConstant(name: Identity, value: Int): Unit = {
     assert(current.isInstanceOf[Enumeration])
 
-    lnn(s"""${name.name} = ${value}""")
+    ln(s"""${name.name} = ${value}""")
 
     val econst = new Constant(name, value)
     econst.comment = Comment.reset()
@@ -119,7 +119,7 @@ object Context {
     println("end")
   }
 
-  def lnn(str: String = ""): Unit = {
+  def ln(str: String = ""): Unit = {
     print(indentation)
     println(str)
   }
