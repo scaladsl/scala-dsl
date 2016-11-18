@@ -42,7 +42,7 @@ define {
     'phone_number enum {
       'beeline is 99777888
       !"""comment for enum"""
-      'vivacell is 99765
+      'vivacell is 99765222
     }
 
     'authentication namespace {
@@ -60,7 +60,7 @@ define {
       }
 
       'login_reply struct {
-        'user1 required 'services2 :: 'authentication :: 'user
+        'user2 required 'services2 :: 'authentication :: 'user
       }
     }
   }

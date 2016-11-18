@@ -1,6 +1,6 @@
 import sgf.GDSL._
 import sgf.GDSL.Lang._
-import sgf.GDSL.Lang.Java._
+import sgf.Java._
 
 generate {
 
