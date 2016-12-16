@@ -52,9 +52,9 @@ object CDSL {
     }
   }
 
-  case class Node(val name: String, val prototype: String, val parent: Node) {
+  case class Node(var name: String, val prototype: String, val parent: Node) {
     val children: ListBuffer[Node] = ListBuffer[Node]()
-    var attributes = Map[String, String]("comment" -> Comment.reset())
+    var attributes = Map[String, String]("comment" -> Comment.reset() )
 
     def fullName(): String = {
       if ( parent == AST.root )
@@ -147,36 +147,129 @@ object CDSL {
       node.children.append(Node("bool", "primitive", node))
       node.children.append(Node("int", "primitive", node))
       node.children.append(Node("float", "primitive", node))
+      node.children.append(Node("uuid", "primitive", node))
       node
     }
   }
 
+  class Function(val url: String, val name: String, _body: => Unit) {
+    def body = _body
+  }
+  
+  def get(url: String)(body: => Unit): Function = new Function(url, "get", body)
+  def post(url: String)(body: => Unit): Function = new Function(url, "post", body)
+  def put(url: String)(body: => Unit): Function = new Function(url, "put", body)
+  def drop(url: String)(body: => Unit): Function = new Function(url, "drop", body)
+  def returns = 'returns
+  def service(block: => Unit) = entity("service", block)
+  def service(baseUrl: String)(block: => Unit) = entity("service", block, baseUrl)
+  def namespace(block: => Unit): EntityTag = entity("namespace", block)
+  def struct(block: => Unit): EntityTag = entity("structure", block)
+  def enum(block: => Unit): EntityTag = entity("enumeration", block)
+ 
+  class EntityTag(_node: Node, _block: => Unit) {
+    var node = _node
+    def block() = _block
+  }
+
+  private def entity(prototype: String, block: => Unit, baseUrl: String = ""): EntityTag = {
+    var node = Node("", prototype, AST.current)
+    if(baseUrl.length > 0) node.attributes += ("service-url" -> baseUrl)
+    AST.push(node)
+    new EntityTag(node, block)
+  }
+
+  private var typeArgs = collection.mutable.Map[Symbol, Any]()
+  private var map = collection.mutable.Map[String, String]()
+  private var argMap = collection.mutable.Map[String, String]()
+
   implicit class Identity(val id: Symbol) {
 
+    def ::=(function: Function): Unit = {
+      val node = Node(name, "function", AST.current)
+      node.attributes += ("method" -> function.name)
+      AST.push(node)
+      function.body
+      if(!node.attributes.contains("return-datatype")){
+        node.attributes += ("return-datatype" -> "void")
+        node.attributes += ("return-modifier" -> "required")
+      }
+
+      if(!map.isEmpty) {
+        map.foreach{ f =>
+          AST.scope(f._1, "url-argument") { node =>
+            val dtype = AST.resolve(f._2)
+            node.attributes += "datatype" -> dtype.fullName
+          }
+        }
+        map.clear
+      }
+      if(!argMap.isEmpty) {
+       argMap.foreach{ f =>
+          AST.scope(f._1, "argument") { node =>
+            val dtype = AST.resolve(f._2)
+            node.attributes += "datatype" -> dtype.fullName
+          }
+        }
+        argMap.clear
+      }
+      AST.pop()
+    }
+
+    def ::=(tag: EntityTag):Unit = {
+        tag.node.name = this.name
+        tag.block
+        AST.pop()
+    }
+
     def name = id.name
-
     def ::(other: Identity): Identity = new Identity(Symbol(s"${other.name}.${name}"))
-
-    def namespace(block: => Unit): Unit = entity("namespace", block)
-    def struct(block: => Unit): Unit = entity("structure", block)
-    def enum(block: => Unit): Unit = entity("enumeration", block)
     def required(datatype: Identity): Unit = field(datatype, "required")
     def optional(datatype: Identity): Unit = field(datatype, "optional")
     def repeated(datatype: Identity): Unit = field(datatype, "repeated")
     def is(value: Int): Unit = AST.scope(name, "constant") { node => node.attributes += "value" -> value.toString }
-
-    private def entity(prototype: String, block: => Unit): Unit = {
-      AST.scope(name, prototype) { _ =>
-        block
-      }
+    
+    def as(datatype: Identity): String = {
+      map = map + (name -> datatype.name)
+      name
     }
 
+    def arg(datatype: Identity): String = {
+      argMap = argMap + (name -> datatype.name)
+      name
+    }
+
+    def apply(args: Tuple2[Symbol, Any]*): Identity = {
+      AST.resolve(name)
+      args.map(tuple => typeArgs += tuple)
+      this
+    }
+  
     private def field(datatype: Identity, modifier: String): Unit = {
-      AST.scope(name, "field") { node =>
-        val dtype = AST.resolve(datatype.name)
-        node.attributes += "datatype" -> dtype.fullName
-        node.attributes += "modifier" -> modifier
+      name match {
+        case "returns" => {
+          if(typeArgs.size != 0) throw new IllegalArgumentException(s"Return type could not have attributes")
+          AST.current.attributes += ("return-datatype" -> AST.resolve(datatype.name).fullName)
+          AST.current.attributes += ("return-modifier" -> modifier)
+        }
+        case _ =>
+          AST.scope(name, "field") { node =>
+            val dtype = AST.resolve(datatype.name)
+            node.attributes += "datatype" -> dtype.fullName
+            node.attributes += "modifier" -> modifier
+            typeAttr
+          }
       }
     }
+
+    private def typeAttr(): Unit = {
+      if(typeArgs.size != 0){
+        typeArgs.foreach{ tuple =>
+          AST.current.attributes =  AST.current.attributes + (tuple._1.name -> tuple._2.toString)
+        }
+        typeArgs.clear
+      }
+    }
+
   }
 }

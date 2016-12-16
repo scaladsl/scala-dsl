@@ -37,10 +37,46 @@ object GDSL {
         case "enumeration" => Enumeration(name,content, parent)
         case "field" => Field(name, content, parent)
         case "constant" => Constant(name, content, parent)
+        case "service" => Service(name, content, parent)
+        case "function" => Function(name, content, parent)
+        case "url-argument" => UrlArgument(name, content, parent)
+        case "argument" => Argument(name, content, parent)
       }
     }
 
     private var path = Array[String]()
+  }
+
+  def createDatatype(dt: String): Datatype = {
+
+    var result: Datatype = null
+    result = dt match {
+      case "string" => StringDatatype()
+      case "int"    => IntDatatype()
+      case "float"  => FloatDatatype()
+      case "bool"   => BoolDatatype()
+      case "uuid"   => UuidDatatype()
+      case "void"   => VoidDatatype()
+      case _ => null
+    }
+
+    if ( result == null ) {
+      val parts = dt.split("::")
+      result = on.ROOT.find(_.name == parts(0)) match {
+        case Some(e) =>
+          if ( parts.size == 1 )
+            e.asInstanceOf[Datatype]
+          else
+            e.find(parts.tail.mkString("::")).asInstanceOf[Datatype]
+          
+        case None => null
+      }
+    }
+
+    if ( result == null )
+      throw new RuntimeException(s"datatype not found: ${dt}");
+
+    result
   }
 
   class Entity(val name: String, val data: ObjectT, val parentEntity: Entity) {
@@ -87,6 +123,7 @@ object GDSL {
     def namespaces = children.filter(_.isInstanceOf[Namespace]).map(_.asInstanceOf[Namespace])
     def structures = children.filter(_.isInstanceOf[Structure]).map(_.asInstanceOf[Structure])
     def enumerations = children.filter(_.isInstanceOf[Enumeration]).map(_.asInstanceOf[Enumeration])
+    def services = children.filter(_.isInstanceOf[Service]).map(_.asInstanceOf[Service])
   }
 
   abstract class Datatype(_id: String, _data: ObjectT, _parent: Entity) extends Entity(_id, _data, _parent)
@@ -95,9 +132,31 @@ object GDSL {
   case class IntDatatype() extends Datatype("int", Map(), null)
   case class FloatDatatype() extends Datatype("float", Map(), null)
   case class BoolDatatype() extends Datatype("bool", Map(), null)
-
+  case class UuidDatatype() extends Datatype("uuid", Map(), null)
+  case class VoidDatatype() extends Datatype("void", Map(), null)
+  
   case class Structure(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
     def fields = children.filter(_.isInstanceOf[Field]).map(_.asInstanceOf[Field])
+  }
+
+  case class Service(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
+    def functions = children.filter(_.isInstanceOf[Function]).map(_.asInstanceOf[Function])
+    def serviceUrl = this("service-url")
+  }
+
+  case class Function(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
+    def urlArgs = children.filter(_.isInstanceOf[UrlArgument]).map(_.asInstanceOf[UrlArgument])
+    def args = children.filter(_.isInstanceOf[Argument]).map(_.asInstanceOf[Argument])
+    def modifier = this("return-modifier")
+    def datatype: Datatype = createDatatype(this("return-datatype"))
+  }
+
+  case class Argument(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
+    def datatype: Datatype = createDatatype(this("datatype"))
+  }
+
+  case class UrlArgument(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
+    def datatype: Datatype = createDatatype(this("datatype"))
   }
 
   case class Enumeration(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
@@ -106,40 +165,7 @@ object GDSL {
 
   case class Field(_id: String, _data: ObjectT, _parent: Entity) extends Entity(_id, _data, _parent) {
     def modifier = this("modifier")
-
-    def datatype: Datatype = {
-      val dt = this("datatype")
-
-      var result: Datatype = null
-
-      result = dt match {
-        case "string" => StringDatatype()
-        case "int" => IntDatatype()
-        case "float" => FloatDatatype()
-        case "bool" => BoolDatatype()
-        case _ => null
-      }
-
-      if ( result == null ) {
-        val parts = this("datatype").split("::")
-        result = on.ROOT.find(_.name == parts(0)) match {
-          case Some(e) => 
-            // e.find(parts.tail.mkString("::")).asInstanceOf[Datatype]
-            if ( parts.size == 1 )
-              e.asInstanceOf[Datatype]
-            else
-              e.find(parts.tail.mkString("::")).asInstanceOf[Datatype]
-            
-          case None => null
-        }
-      }
-
-      if ( result == null )
-        throw new RuntimeException(s"datatype not found: ${this("datatype")}");
-
-      result
-    }
-
+    def datatype: Datatype = createDatatype(this("datatype"))
   }
 
   case class Constant(_id: String, _data: ObjectT, _parent: Entity) extends Entity(_id, _data, _parent) {
@@ -150,6 +176,7 @@ object GDSL {
     var onNamespace: Namespace => Unit = null
     var onStructure: Structure => Unit = null
     var onEnumeration: Enumeration => Unit = null
+    var onService: Service => Unit = null
 
     var ROOT: List[Entity] = List()
 
@@ -158,6 +185,9 @@ object GDSL {
     def STRUCTURE(generate: Structure => Unit): Unit = onStructure = generate
 
     def ENUMERATION(generate: Enumeration => Unit): Unit = onEnumeration = generate
+
+    def SERVICE(generate: Service => Unit): Unit = onService = generate
+
   }
 
   private def traverse(current: Entity): Unit = {
@@ -165,6 +195,7 @@ object GDSL {
       case n: Namespace => on.onNamespace(n)
       case s: Structure => on.onStructure(s)
       case e: Enumeration => on.onEnumeration(e)
+      case c: Service => on.onService(c)
       case _ => // ignore
     }
     current.children.foreach(traverse(_))
@@ -178,10 +209,14 @@ object GDSL {
     private var writer: PrintWriter = null
 
     def source(outputPath: String, name: String)(body: => Unit): Unit = {
-      new File(outputPath).mkdir()
+      new File(outputPath).mkdirs()
       writer = new PrintWriter(new File(outputPath, name))
       body
       writer.close()
+    }
+
+    def bigBlock(str: String): Unit = {
+      writer.write(str.stripMargin('|'))
     }
 
     def block(str: String)(body: => Unit): Unit = {
@@ -212,4 +247,3 @@ object GDSL {
     }
   }
 }
-
