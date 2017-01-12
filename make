@@ -1,4 +1,6 @@
+fsc -reset
 rm -rf build/*
 rm -rf lib/sgf.jar
 mkdir -p build/
-scalac -deprecation -d build/ src/*.scala
+mkdir -p dsl-output/
+scalac -deprecation -d build/ src/main/scala/*.scala

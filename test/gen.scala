@@ -9,7 +9,7 @@ generate {
   }
 
   on STRUCTURE { structure =>
-    source(s"/home/anahitm/dev/dsl-output/${structure.fullPathDirectory}", s"${structure.name.toPascal}.java") {
+    source(s"./dsl-output/${structure.fullPathDirectory}", s"${structure.name.toPascal}.java") {
       ln(s"package ${structure.fullPath};")
 
       comment(structure)
@@ -34,7 +34,7 @@ generate {
   }
 
   on ENUMERATION { enumeration =>
-    // source(s"/home/anahitm/dev/dsl-output/${enumeration.fullPathDirectory}", s"${enumeration.name.toPascal}.java") {
+    // source(s"./dsl-output/${enumeration.fullPathDirectory}", s"${enumeration.name.toPascal}.java") {
     //   ln(s"package ${enumeration.fullPath};")
 
     //   block(s"public enum " + enumeration.name.toPascal) {
@@ -60,7 +60,7 @@ generate {
   }
 
   on SERVICE { service =>
-    source(s"/home/anahitm/dev/dsl-output/${service.fullPathDirectory}", s"${service.name.toPascal}Service.java") {
+    source(s"./dsl-output/${service.fullPathDirectory}", s"${service.name.toPascal}Service.java") {
       ln(s"package ${service.fullPath};")
 
       block(s"public interface ${service.name.toPascal}") {
@@ -71,7 +71,7 @@ generate {
       }
     }
 
-    source(s"/home/anahitm/dev/dsl-output/${service.fullPathDirectory}", s"Abstract${service.name.toPascal}Controller.java") {
+    source(s"./dsl-output/${service.fullPathDirectory}", s"Abstract${service.name.toPascal}Controller.java") {
 
       ln(s"package ${service.fullPath};")
 
