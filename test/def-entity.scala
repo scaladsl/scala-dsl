@@ -1,12 +1,17 @@
 'am :: 'iunetworks :: 'ppcm ::'components ::'administration ::= namespace {
 
-  'cpv ::= struct {
-    'id required 'uuid('nullable -> true)
-    'paretn_id required 'uuid
-    'code required 'string
-    'name_en required 'string
-    'name_hy required 'string
-    'name_ru required 'string
-    'armeps_id required 'int
+  'article ::= struct {
+    'article_id required 'string
+    'author required 'string
+    'article required 'string
+    'date required 'string
   }
+
+  'comment ::= struct {
+    'author required 'string
+    'comment required 'string
+    'date required 'string
+    'article_id required 'string
+  }
+
 }

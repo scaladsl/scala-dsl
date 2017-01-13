@@ -73,14 +73,8 @@ object Java {
       }
     }
 
-    function.urlArgs.foreach{arg =>
-      urlArgMap = urlArgMap + (arg.urlArgTypeName -> arg.name)
-    }
-
-    function.args.foreach{arg =>
-      argMap = argMap + (arg.argTypeName -> arg.name)
-    }
-
+    function.urlArgs.foreach{arg => urlArgMap = urlArgMap + (arg.urlArgTypeName -> arg.name) }
+    function.args.foreach{arg => argMap = argMap + (arg.argTypeName -> arg.name) }
 
     if(argMap.size > 1) {
       argMap.foreach { arg =>
@@ -150,4 +144,5 @@ object Java {
     }
 
   }
+
 }

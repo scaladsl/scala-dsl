@@ -25,7 +25,6 @@ object define {
     }
         
     def main(args: Array[String]){
-      //  println(args(0)) //./test/def.scala
         writer.write("import sgf.CDSL._\ndefine {\n")
         io.Source.fromFile("./test/def.scala").getLines.foreach{line => resolveLine(line)}
         writer.write("}\n")

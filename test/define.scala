@@ -2,54 +2,35 @@ import sgf.CDSL._
 define {
 'am :: 'iunetworks :: 'ppcm ::'components ::'administration ::= namespace {
 
-  'cpv ::= struct {
-    'id required 'uuid('nullable -> true)
-    'paretn_id required 'uuid
-    'code required 'string
-    'name_en required 'string
-    'name_hy required 'string
-    'name_ru required 'string
-    'armeps_id required 'int
+  'article ::= struct {
+    'article_id required 'string
+    'author required 'string
+    'article required 'string
+    'date required 'string
   }
-}
-'am :: 'iunetworks :: 'ppcm ::'components ::'administration ::= namespace {
 
-  'cpv ::= struct {
-    'id required 'uuid('nullable -> true)
-    'paretn_id required 'uuid
-    'code required 'string
-    'name_en required 'string
-    'name_hy required 'string
-    'name_ru required 'string
-    'armeps_id required 'int
+  'comment ::= struct {
+    'author required 'string
+    'comment required 'string
+    'date required 'string
+    'article_id required 'string
   }
-}
 
+}
 'am::'iunetworks::'ppcm::'components::'administration ::= namespace {
-  'cpv ::= service("/private/administration/dictionaries/cpv") {
-    'list ::= post(s"/list/${'parent as 'uuid}") {
-      returns repeated  'cpv
+
+  'spark ::= service("/articles") {
+
+    'get ::= get(s"/${'id as 'uuid}") {
+      returns required 'uuid
     }
 
-    'get ::= post(s"/get/${'id as 'uuid}") {
-      returns required 'am::'iunetworks::'ppcm::'components::'administration ::'cpv
+    'post ::= post(s"/${'id as 'uuid}/comments") {
+      returns required 'uuid
     }
 
-    'paht ::= post(s"/path/${'id as 'uuid}") {
-      returns repeated 'am::'iunetworks::'ppcm::'components::'administration ::'cpv
-    }
-
-    'count ::= post(s"/count") {
-      returns required 'int
-    }
-
-    !"""comment for add method"""
-    'add ::= post(s"/add") {
-      'cpv arg 'am::'iunetworks::'ppcm::'components::'administration ::'cpv
-    }
-
-    'save ::= put(s"/path") {
-      'cpvcode arg  'am::'iunetworks::'ppcm::'components::'administration ::'cpv
+    'get ::= get(s"/${'id as 'uuid}/comments") {
+      returns required 'uuid
     }
   }
 
