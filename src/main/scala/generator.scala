@@ -1,4 +1,4 @@
-package sgf
+package dslg
 
 import java.text._
 import java.io._
@@ -6,14 +6,55 @@ import scala.collection.JavaConversions
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json._
 import scala.collection.mutable.Stack
+//import scala.io.StdIn.readLine
 
-object GDSL {
+object gdsl {
+
+  object options {
+    var newLine = "\n"
+    var indentWith = "  "
+    var indentLevel = 0
+    var blockStart = "{"
+    var blockEnd = "}"
+    var currentDir = "./"
+  }
+
+  private var currentFile: PrintWriter = null
+  private var root: List[Entity] = List()
+
+  private var onBeginNamespace: Namespace => Unit = null
+  private var onEndNamespace: Namespace => Unit = null
+  private var onBeginStructure: Structure => Unit = null
+  private var onEndStructure: Structure => Unit = null
+  private var onBeginEnumeration: Enumeration => Unit = null
+  private var onEndEnumeration: Enumeration => Unit = null
+  private var onBeginService: Service => Unit = null
+  private var onEndService: Service => Unit = null
+  private var onBeginAll: List[Entity] => Unit = null
+  private var onEndAll: List[Entity] => Unit = null
+
+  object begin {
+    def NAMESPACE(generate: Namespace => Unit): Unit = onBeginNamespace  = generate
+    def STRUCTURE(generate: Structure => Unit): Unit = onBeginStructure = generate
+    def ENUMERATION(generate: Enumeration => Unit): Unit = onBeginEnumeration = generate
+    def SERVICE(generate: Service => Unit): Unit = onBeginService = generate
+    def ALL(generate: List[Entity] => Unit): Unit = onBeginAll = generate
+  }
+
+  object end {
+    def NAMESPACE(generate: Namespace => Unit): Unit = onEndNamespace  = generate
+    def STRUCTURE(generate: Structure => Unit): Unit = onEndStructure = generate
+    def ENUMERATION(generate: Enumeration => Unit): Unit = onEndEnumeration = generate
+    def SERVICE(generate: Service => Unit): Unit = onEndService = generate
+    def ALL(generate: List[Entity] => Unit): Unit = onEndAll = generate
+  }
 
   def generate(block: => Unit) {
     block
+
     val sb = new StringBuilder
     var line = readLine
-    while(line != null) {
+    while ( line != null ) {
       sb.append(line)
       line = readLine
     }
@@ -21,8 +62,68 @@ object GDSL {
     val obj = JSON.parseFull(sb.toString)
     val list = obj.get.asInstanceOf[List[Any]]
 
-    on.ROOT = list.map(d => Entity.createEntity(d.asInstanceOf[ObjectT], null))
-    on.ROOT.foreach(traverse(_))
+    root = list.map(d => Entity.createEntity(d.asInstanceOf[ObjectT], null))
+
+    if ( onBeginAll != null ) onBeginAll(root)
+    root.foreach(traverse(_))
+    if ( onEndAll != null ) onEndAll(root)
+  }
+
+  // def config(name: String): String = {
+  //   "./"
+  // }
+
+  def openFile(filename: String) {
+    if ( currentFile != null ) {
+      closeFile();
+    }
+
+    val f = new File(options.currentDir, filename);
+
+    f.getParentFile().mkdirs()
+
+    currentFile = new PrintWriter(f)
+  }
+
+  def closeFile() {
+    currentFile.close()
+  }
+
+  def file(filename: String)(body: => Unit): Unit = {
+    openFile(filename)
+    body
+    closeFile()
+  }
+
+  def bigBlock(str: String): Unit = {
+    currentFile.write(str.stripMargin('|'))
+  }
+
+  def block(str: String)(body: => Unit): Unit = {
+    currentFile.write(options.indentWith * options.indentLevel)
+    currentFile.write(str)
+    currentFile.write(options.blockStart)
+    currentFile.write(options.newLine)
+    options.indentLevel += 1
+    body
+    options.indentLevel -= 1
+    currentFile.write(options.indentWith * options.indentLevel)
+    currentFile.write(options.blockEnd)
+    currentFile.write(options.newLine)
+  }
+
+  def ln(str: String): Unit = {
+    currentFile.write(options.indentWith * options.indentLevel)
+    currentFile.write(str)
+    currentFile.write(options.newLine)
+  }
+
+  implicit class Name(name: String) {
+    def toPascal(): String = name.split("_").map(_.capitalize).mkString("")
+
+    def toCamel(): String = toPascal.substring(0, 1).toLowerCase + toPascal.substring(1)
+
+    def toUpper() = name.toUpperCase
   }
 
   type ObjectT = Map[String, Any]
@@ -40,14 +141,13 @@ object GDSL {
         case "service" => Service(name, content, parent)
         case "function" => Function(name, content, parent)
         case "url-argument" => UrlArgument(name, content, parent)
-        case "argument" => Argument(name, content, parent)
       }
     }
 
     private var path = Array[String]()
   }
 
-  def createDatatype(dt: String): Datatype = {
+  private def createDatatype(dt: String): Datatype = {
 
     var result: Datatype = null
     result = dt match {
@@ -57,12 +157,13 @@ object GDSL {
       case "bool"   => BoolDatatype()
       case "uuid"   => UuidDatatype()
       case "void"   => VoidDatatype()
+      case "date"   => DateDatatype()
       case _ => null
     }
 
     if ( result == null ) {
       val parts = dt.split("::")
-      result = on.ROOT.find(_.name == parts(0)) match {
+      result = root.find(_.name == parts(0)) match {
         case Some(e) =>
           if ( parts.size == 1 )
             e.asInstanceOf[Datatype]
@@ -79,16 +180,23 @@ object GDSL {
     result
   }
 
-  class Entity(val name: String, val data: ObjectT, val parentEntity: Entity) {
-
-    protected val attributes = (data filter { case (_, v) => !v.isInstanceOf[ObjectT] && !v.isInstanceOf[ListT] }).asInstanceOf[Map[String, String]]
+  class Entity(val name: String, val data: ObjectT, val parent: Entity) {
+    protected val attributes = (data filter { case (_, v) => v.isInstanceOf[String] }).asInstanceOf[Map[String, String]]
     val children = (data getOrElse ("children", List())).asInstanceOf[ListT].map(Entity.createEntity(_, this))
+
     val comment = this("comment", "")
-    private var parentsOfStruct = Array[String](name.capitalize)
 
     def apply(name: String): String = (attributes get name).get
 
     def apply(name: String, defaultVal: String): String = attributes getOrElse (name, defaultVal)
+
+    def has(key: Symbol): Boolean = {
+      has(key.name)
+    }
+
+    def has(key: String): Boolean = {
+      attributes.contains(key)
+    }
 
     def find(name: String): Entity = {
       val parts = name.split("::")
@@ -103,19 +211,11 @@ object GDSL {
       }
     }
 
-    def fullPath(): String = {
-      Entity.path = Array[String]()
-      findPackRecursively
-      Entity.path.reverse.mkString(".")
-    }
-
-    def fullPathDirectory(): String = fullPath.replace(".", "/")
-
-    def findPackRecursively(): Unit = {
-      if(parentEntity.isInstanceOf[Namespace] && parentEntity!= null) {
-        Entity.path = Entity.path :+ parentEntity.name
-        parentEntity.findPackRecursively
-      }
+    def path: String = {
+      if ( parent == null )
+        name
+      else
+        parent.path //+ "::" + name
     }
   }
 
@@ -134,6 +234,7 @@ object GDSL {
   case class BoolDatatype() extends Datatype("bool", Map(), null)
   case class UuidDatatype() extends Datatype("uuid", Map(), null)
   case class VoidDatatype() extends Datatype("void", Map(), null)
+  case class DateDatatype() extends Datatype("date", Map(), null)
   
   case class Structure(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
     def fields = children.filter(_.isInstanceOf[Field]).map(_.asInstanceOf[Field])
@@ -141,18 +242,15 @@ object GDSL {
 
   case class Service(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
     def functions = children.filter(_.isInstanceOf[Function]).map(_.asInstanceOf[Function])
-    def serviceUrl = this("service-url")
+    def serviceUrl = this("service-url", "")
   }
 
   case class Function(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
     def urlArgs = children.filter(_.isInstanceOf[UrlArgument]).map(_.asInstanceOf[UrlArgument])
-    def args = children.filter(_.isInstanceOf[Argument]).map(_.asInstanceOf[Argument])
+    def fields = children.filter(_.isInstanceOf[Field]).map(_.asInstanceOf[Field])
     def modifier = this("return-modifier")
     def datatype: Datatype = createDatatype(this("return-datatype"))
-  }
-
-  case class Argument(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
-    def datatype: Datatype = createDatatype(this("datatype"))
+    def method = this("method")
   }
 
   case class UrlArgument(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
@@ -172,78 +270,30 @@ object GDSL {
     val value = this("value")
   }
 
-  object on {
-    var onNamespace: Namespace => Unit = null
-    var onStructure: Structure => Unit = null
-    var onEnumeration: Enumeration => Unit = null
-    var onService: Service => Unit = null
-
-    var ROOT: List[Entity] = List()
-
-    def NAMESPACE(generate: Namespace => Unit): Unit = onNamespace  = generate
-
-    def STRUCTURE(generate: Structure => Unit): Unit = onStructure = generate
-
-    def ENUMERATION(generate: Enumeration => Unit): Unit = onEnumeration = generate
-
-    def SERVICE(generate: Service => Unit): Unit = onService = generate
-
-  }
-
   private def traverse(current: Entity): Unit = {
     current match {
-      case n: Namespace => on.onNamespace(n)
-      case s: Structure => on.onStructure(s)
-      case e: Enumeration => on.onEnumeration(e)
-      case c: Service => on.onService(c)
+      case n: Namespace =>
+        if ( onBeginNamespace != null ) onBeginNamespace(n)
+        current.children.foreach(traverse(_))
+        if ( onEndNamespace != null ) onEndNamespace(n)
+        
+      case s: Structure =>
+        if ( onBeginStructure != null ) onBeginStructure(s)
+        current.children.foreach(traverse(_))
+        if ( onEndStructure != null ) onEndStructure(s)
+        
+      case e: Enumeration =>
+        if ( onBeginEnumeration != null ) onBeginEnumeration(e)
+        current.children.foreach(traverse(_))
+        if ( onEndEnumeration != null ) onEndEnumeration(e)
+
+      case c: Service =>
+        if ( onBeginService != null ) onBeginService(c)
+        current.children.foreach(traverse(_))
+        if ( onEndService != null ) onEndService(c)
+
       case _ => // ignore
     }
-    current.children.foreach(traverse(_))
   }
 
-  object Lang {
-    val NEWLINE = "\n"
-    val INDENT = "  "
-
-    private var indentLevel = 0
-    private var writer: PrintWriter = null
-
-    def source(outputPath: String, name: String)(body: => Unit): Unit = {
-      new File(outputPath).mkdirs()
-      writer = new PrintWriter(new File(outputPath, name))
-      body
-      writer.close()
-    }
-
-    def bigBlock(str: String): Unit = {
-      writer.write(str.stripMargin('|'))
-    }
-
-    def block(str: String)(body: => Unit): Unit = {
-      writer.write(INDENT * indentLevel)
-      writer.write(str)
-      writer.write(" {")
-      writer.write(NEWLINE)
-      indentLevel += 1
-      body
-      indentLevel -= 1
-      writer.write(INDENT * indentLevel)
-      writer.write("}")
-      writer.write(NEWLINE)
-    }
-
-    def ln(str: String): Unit = {
-      writer.write(INDENT * indentLevel)
-      writer.write(str)
-      writer.write(NEWLINE)
-    }
-
-    implicit class Name(name: String) {
-      def toPascal(): String = name.split("_").map(_.capitalize).mkString("")
-
-      def toCamel(): String = toPascal.substring(0, 1).toLowerCase + toPascal.substring(1)
-
-      def toUpper() = name.toUpperCase
-    }
-  }
 }

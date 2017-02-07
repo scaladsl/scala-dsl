@@ -1,11 +1,10 @@
-package sgf
+package dslc
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Stack
 import scala.util.parsing.json._
 
 object CDSL {
-
   private var global = List[Any]()
 
   def define(body: => Unit): Unit = {
@@ -50,6 +49,7 @@ object CDSL {
     def append(comment: String): Unit = {
       value += comment
     }
+
   }
 
   case class Node(var name: String, val prototype: String, var parent: Node) {
@@ -62,6 +62,7 @@ object CDSL {
       else {
         s"${parent.fullName}::$name"
       }
+
     }
 
     def find(name: String): Option[Node] = children.find(_.name == name)
@@ -77,7 +78,6 @@ object CDSL {
   }
 
   object AST {
-
     val root = createRoot()
     private val context = Stack[Node](root)
 
@@ -105,6 +105,7 @@ object CDSL {
         case None =>
           null
       }
+
     }
 
     private def findRecursively(current: Node, name: String): Node = {
@@ -146,6 +147,7 @@ object CDSL {
       node.children.append(Node("int", "primitive", node))
       node.children.append(Node("float", "primitive", node))
       node.children.append(Node("uuid", "primitive", node))
+      node.children.append(Node("date", "primitive", node))
       node
     }
   }
@@ -173,7 +175,6 @@ object CDSL {
   private def entity(prototype: String, block: => Unit, baseUrl: String = ""): EntityTag = {
     var node = Node("", prototype, AST.current)
     if (baseUrl.length > 0) node.attributes += ("service-url" -> baseUrl)
-    //AST.push(node)
     new EntityTag(node, block)
   }
 
@@ -192,7 +193,6 @@ object CDSL {
         node.attributes += ("return-datatype" -> "void")
         node.attributes += ("return-modifier" -> "required")
       }
-
       if (!urlArgs.isEmpty) {
         urlArgs.foreach { f =>
           AST.scope(f._1, "url-argument") { node =>
@@ -290,4 +290,5 @@ object CDSL {
     }
 
   }
+
 }
