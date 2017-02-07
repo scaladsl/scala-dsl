@@ -24,13 +24,13 @@ object mainDef {
       }
   }
   
-  def main(args: Array[String]){
+  def main(args: Array[String]) {
+    if(args.length > 1) throw new IllegalArgumentException(s"There mast be only one filepath")
     val settings = new Settings()
-    settings.classpath.append("./build")
-    settings.usejavacp.value = true
+    settings.classpath.append("./build/compiler")
+    settings.usejavacp.value = true    
     val writer = new java.io.StringWriter()
     val imain = new IMain(settings, new java.io.PrintWriter(writer))
-    if(args.length > 1) throw new IllegalArgumentException(s"There mast be only one filepath")
     content.append("import dslc.CDSL._ \ndefine {\n")
     scala.io.Source.fromFile(args(0)).getLines.foreach{line => resolveLine(line)}
     content.append("}")

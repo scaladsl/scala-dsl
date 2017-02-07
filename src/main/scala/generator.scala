@@ -6,7 +6,7 @@ import scala.collection.JavaConversions
 import scala.collection.mutable.ListBuffer
 import scala.util.parsing.json._
 import scala.collection.mutable.Stack
-//import scala.io.StdIn.readLine
+import scala.io.StdIn.readLine
 
 object gdsl {
 
@@ -51,7 +51,6 @@ object gdsl {
 
   def generate(block: => Unit) {
     block
-
     val sb = new StringBuilder
     var line = readLine
     while ( line != null ) {

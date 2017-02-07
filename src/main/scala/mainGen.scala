@@ -6,9 +6,9 @@ import scala.tools.nsc.interpreter._
 object mainGen {
 
   def main(args: Array[String]) {
-    
+
     var options = Map[String, String]()
-    var files = List[String]()
+    var file = ""
 
     args.foreach { a =>
       if ( a.startsWith("--") ) {
@@ -16,39 +16,31 @@ object mainGen {
         val optVal = a.split('=')(1)
         options.put(optKey, optVal)
       } else {
-        files = files :+ a
+        if(file != "") throw new IllegalArgumentException(s"There mast be only one filepath")
+          file = a
       }
     }
 
     val config = new StringBuilder
-
     config.append("object config { ")
-
     options.foreach{ case (k, v) =>
-      config.append(s"""val ${k} = "${v}";""")
+      val value = v.replaceAll("\"","""\\"""")
+      config.append(s"""val ${k} = "${value}";""")
     }
-
     config.append("}")
-
     val settings = new Settings()
-
-    settings.classpath.append("./build");
+    settings.classpath.append("./build/generator");
     settings.usejavacp.value = true
-
     val writer = new java.io.StringWriter()
     val imain = new IMain(settings, new java.io.PrintWriter(writer))
-
-    files.foreach { f =>
-      val content = scala.io.Source.fromFile(f).mkString
-      var statusConf = imain.interpret(config.toString)
-      if(statusConf.toString != "Success")
-        println(writer.toString())
-      var statusCont = imain.interpret(content)
-      if(statusCont.toString != "Success")
-        println(writer.toString())
-    }
+    val content = scala.io.Source.fromFile(file).mkString
+    var statusConf = imain.interpret(config.toString)
+    if(statusConf.toString != "Success")
+      println(writer.toString())
+    var statusCont = imain.interpret(content)
+    if(statusCont.toString != "Success")
+      println(writer.toString())
     
   }
-
 }
 

@@ -31,7 +31,6 @@ def jtype(field: Field): String = {
 def comment(e: Entity): Unit = { if(e.comment != "") ln(s"/** ${e.comment} */") }
 
 generate {
-
   begin ALL { root =>
     options.blockStart = "{"
     options.blockEnd = "}"
@@ -42,7 +41,6 @@ generate {
 
     file(s"${structure.name.toPascal}.java") {
       ln(s"package ${structure.path};")
-
       comment(structure)
       block(s"public class ${structure.name.toPascal}") {
         structure.fields.foreach { f =>

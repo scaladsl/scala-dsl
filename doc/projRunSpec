@@ -1,10 +1,10 @@
 # 1. bash script method
 
 # 1.1 with scala
-$ scala -cp build -savecompiled ./src/main/scala/mainDef.scala ./test/blog.scala | scala -cp build -savecompiled ./src/main/scala/mainGen.scala --output="./java/generated/org/blog/model" ./test/gen.scala
+$ scala -cp build ./src/main/scala/mainDef.scala ./test/blog.scala | scala -cp build ./src/main/scala/mainGen.scala ./test/gen-java-model.scala --output="./dsl-output/" --a="aaa\"aa"
 
 # 1.2 with sgfc and sgfg script
-$ ./sgfc ./test/blog.scala | ./sgfg --output="./java/generated/org/blog/model" ./test/gen.scala
+$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-model.scala --output="./dsl-output/" --a="aaa\"aa"
 
 
 # 2. jar method
