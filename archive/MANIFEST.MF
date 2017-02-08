@@ -1,0 +1,2 @@
+Main-Class: mainDef
+Class-Path: scala-library-2.11.6.jar scala-compiler-2.11.6.jar scala-reflect-2.11.6.jar scala-parser-combinators-2.11.0-M4.jar

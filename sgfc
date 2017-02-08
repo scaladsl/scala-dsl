@@ -1,0 +1,4 @@
+#!/bin/bash
+
+#scala -cp build -savecompiled ./src/main/scala/mainDef.scala "$@"
+scala -cp build ./src/main/scala/mainDef.scala "$@"
