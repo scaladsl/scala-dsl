@@ -1,3 +1,0 @@
-#!/bin/bash
-
-scala -cp build ./src/main/scala/mainGen.scala "$@"

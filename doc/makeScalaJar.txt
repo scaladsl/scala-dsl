@@ -1,8 +1,0 @@
-1. Make jar with MANIFEST.MF
-jar cvfm dslc.jar Manifest.MF *.class dslc
-
-2. Make jar with main class name
-jar cvfe dslg.jar mainGen dslg *.class -C scala-libs .
-
-3. Execute jar
-java -jar dslc.jar
