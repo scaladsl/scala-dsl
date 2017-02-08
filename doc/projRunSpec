@@ -1,0 +1,15 @@
+# 1. bash script method
+
+# 1.1 with scala
+$ scala -cp build ./src/main/scala/mainDef.scala ./test/blog.scala | scala -cp build ./src/main/scala/mainGen.scala ./test/gen-java-model.scala --output="./dsl-output/" --a="aaa\"aa"
+
+# 1.2 with sgfc and sgfg script
+$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-model.scala --output="./dsl-output/" --a="aaa\"aa"
+
+
+# 2. jar method
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./java/generated/org/blog/model" gen-java-model.scala
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./java/generated/org/blog/dao" gen-java-dao.scala
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./java/generated/org/blog/servises" gen-java-services.scala
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./sql" gen-sqlite.scala
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./java/resources/static/js" gen-js.scala
