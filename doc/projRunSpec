@@ -1,15 +1,28 @@
-# 1. bash script method
+# 1. bash-script method
 
-# 1.1 with scala
-$ scala -cp build ./src/main/scala/mainDef.scala ./test/blog.scala | scala -cp build ./src/main/scala/mainGen.scala ./test/gen-java-model.scala --output="./dsl-output/" --a="aaa\"aa"
+# 1.1 using scala
+$ scala ./src/main/scala/mainDef.scala ./test/blog.scala | scala ./src/main/scala/mainGen.scala ./test/gen-java-model.scala --output="./dsl-output/"
 
-# 1.2 with sgfc and sgfg script
-$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-model.scala --output="./dsl-output/" --a="aaa\"aa"
+# 1.2 using sgfc and sgfg scripts
+$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-model.scala --output="./dsl-output/"
+$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-dao.scala --output="./dsl-output/"
+$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-service.scala --output="./dsl-output/"
+$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-sql.scala --output="./dsl-output/"
+$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-js.scala --output="./dsl-output/"
 
 
-# 2. jar method
-$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./java/generated/org/blog/model" gen-java-model.scala
-$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./java/generated/org/blog/dao" gen-java-dao.scala
-$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./java/generated/org/blog/servises" gen-java-services.scala
-$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./sql" gen-sqlite.scala
-$ java -jar dslc.jar blog.scala | java -jar dslg.jar --output="./java/resources/static/js" gen-js.scala
+# 2. jar methods
+
+# 2.1 specification
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar gen-java-model.scala --output="./java/generated/org/blog/model" --a="aaa\"aa" # parameter value can contain double quote(")
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar gen-java-dao.scala --output="./java/generated/org/blog/dao"
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar gen-java-services.scala --output="./java/generated/org/blog/servises"
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar gen-sqlite.scala --output="./sql"
+$ java -jar dslc.jar blog.scala | java -jar dslg.jar gen-js.scala --output="./java/resources/static/js"
+
+# 2.2 usage
+$ java -jar dslc.jar ./test/blog.scala | java -jar dslg.jar ./test/gen-java-model.scala --output="./dsl-output/"
+$ java -jar dslc.jar ./test/blog.scala | java -jar dslg.jar ./test/gen-java-dao.scala --output="./dsl-output/"
+$ java -jar dslc.jar ./test/blog.scala | java -jar dslg.jar ./test/gen-java-service.scala --output="./dsl-output/"
+$ java -jar dslc.jar ./test/blog.scala | java -jar dslg.jar ./test/gen-sql.scala --output="./dsl-output/"
+$ java -jar dslc.jar ./test/blog.scala | java -jar dslg.jar ./test/gen-js.scala --output="./dsl-output/"

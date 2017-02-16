@@ -1,5 +1,9 @@
 # scala-dsl
 
 $ cd scala-dsl
-$ ./make
-$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-model.scala --output="./dsl-output/" --a="aaa\"aa"
+
+$ ./makeProject
+$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-model.scala --output="./dsl-output/"
+
+$ ./makeJars
+$ java -jar dslc.jar ./test/blog.scala | java -jar dslg.jar ./test/gen-java-model.scala --output="./dsl-output/"

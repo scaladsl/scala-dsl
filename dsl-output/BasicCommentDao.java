@@ -1,4 +1,4 @@
-package blog;
+package model;
 class BasicCommentDao{
 
   private Connection connection;
@@ -38,7 +38,7 @@ class BasicCommentDao{
     try{
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       String stringDateISO = df.format(comment.submittedAt);
-      String sql = "update comment set id = ?, where id = ?;";
+      String sql = "update comment set where id = ?;";
       ps = getPrepareStatement(sql);
       ps.setString(1, comment.id.toString());
       ps.setString(2, comment.articleId.toString());
@@ -81,15 +81,14 @@ class BasicCommentDao{
     finally { closePrepareStatement(ps); }
     return commentList;
   }
-  public Comment selectByKey(java.util.UUID id) throws Throwable{
+  public Comment selectByKey() throws Throwable{
     Comment comment = null;
     PreparedStatement ps = null;
     try {
-      String sql = "Select * from comment where id = ? ;";
+      String sql = "Select * from comment where  ;";
       SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       comment = new Comment();
       ps = getPrepareStatement(sql);
-      ps.setString(1, id.toString());
       ps.setString(1, id.toString());
       ResultSet rs = ps.executeQuery();
       while (rs.next()){

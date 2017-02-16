@@ -1,4 +1,4 @@
-package blog;
+package model;
 class BasicArticleDao{
 
   private Connection connection;

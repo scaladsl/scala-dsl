@@ -20,6 +20,8 @@ def urlArgType(urlArg: UrlArgument): String = {
   baseType
 }
 
+
+
 def functionParams(f: Function): String = {
   var params = List[String]()
   f.urlArgs.foreach{arg => params = params ::: List(urlArgType(arg) + " " + arg.name.toCamel) }
@@ -80,7 +82,6 @@ def jtype(field: Field): String = {
     case "repeated" => s"java.collection.List<$baseType>"
     case x => throw new IllegalArgumentException(s"Invalid modifier: $x")
   }
-
 }
 
 generate {
