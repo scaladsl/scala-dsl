@@ -1,0 +1,5 @@
+1. dsl-scala-library-2.12.1.jar includes
+                                        ../scala_2.12.1/scala-compiler.jar
+                                        ../scala_2.12.1/scala-library.jar
+                                        ../scala_2.12.1/scala-parser-combinators_2.12-1.0.4.jar
+                                        ../scala_2.12.1/scala-reflect.jar

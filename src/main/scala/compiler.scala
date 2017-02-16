@@ -1,5 +1,6 @@
 package dslc
 
+
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Stack
 import scala.util.parsing.json._
@@ -82,7 +83,7 @@ object CDSL {
     private val context = Stack[Node](root)
 
     def resolve(name: String): Node = {
-      var path = name.split('.').toList
+      var path = name.split("::").toList
       val res = if (path.size > 1) {
         findByPath(root, path)
       } else {
@@ -159,7 +160,7 @@ object CDSL {
   def get(url: String)(body: => Unit): Function = new Function(url, "get", body)
   def post(url: String)(body: => Unit): Function = new Function(url, "post", body)
   def put(url: String)(body: => Unit): Function = new Function(url, "put", body)
-  def drop(url: String)(body: => Unit): Function = new Function(url, "drop", body)
+  def delete(url: String)(body: => Unit): Function = new Function(url, "delete", body)
   def returns = 'returns
   def service(block: => Unit) = entity("service", block)
   def service(baseUrl: String)(block: => Unit) = entity("service", block, baseUrl)
@@ -187,6 +188,7 @@ object CDSL {
     def ::=(function: Function): Unit = {
       val node = Node(name, "function", AST.current)
       node.attributes += ("method" -> function.name)
+      node.attributes += ("url" -> function.url)
       AST.push(node)
       function.body
       if (!node.attributes.contains("return-datatype")) {
@@ -215,8 +217,8 @@ object CDSL {
     }
 
     def ::=(tag: EntityTag): Unit = {
-      if(name.contains('.')){
-        val namespaces = name.split('.')
+      if(name.contains("::")){
+        val namespaces = name.split("::")
         for( i <- 0 to namespaces.size -2 ){ AST.push(Node(namespaces(i), "namespace", AST.current))}    
         tag.node.name = namespaces.last
         tag.node.parent = AST.current
@@ -233,7 +235,7 @@ object CDSL {
     }
 
     def name = id.name
-    def ::(other: Identity): Identity = new Identity(Symbol(s"${other.name}.${name}"))
+    def ::(other: Identity): Identity = new Identity(Symbol(s"${other.name}::${name}"))
     def required(datatype: Identity): Unit = field(datatype, "required")
     def optional(datatype: Identity): Unit = field(datatype, "optional")
     def repeated(datatype: Identity): Unit = field(datatype, "repeated")
@@ -262,6 +264,8 @@ object CDSL {
       args.map(tuple => typeArgs += tuple)
       this
     }
+
+    override def toString = name
 
     private def field(datatype: Identity, modifier: String): Unit = {
       name match {

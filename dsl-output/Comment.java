@@ -1,4 +1,4 @@
-package blog;
+package model;
 /**  The comment */
 public class Comment{
   /**  Comment identity */
