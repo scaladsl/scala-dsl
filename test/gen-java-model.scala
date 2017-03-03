@@ -54,7 +54,6 @@ generate {
             ln(s"this.${f.name.toCamel} = ${f.name.toCamel};")
           }
         }
-         //if(jtype(f) == "java.util.UUID" || jtype(f) == "java.util.Date")
         block(s"public String toString()") {
           var str = structure.fields.map(f => s""" \"${f.name}: '\" + this.${f.name.toCamel}""").mkString("\"'\" +")
           ln(s"return ${str};")

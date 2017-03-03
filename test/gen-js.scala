@@ -3,18 +3,14 @@ import dslg.gdsl._
 def functionParams(f: Function): String = {
   var params = List[String]()
   f.urlArgs.foreach{ arg => params = params ::: List(arg.name) }
-
-  f.fields.foreach{f =>
-    if(f.datatype.isInstanceOf[Structure])
-      params = params ::: List("json")
-    else params = params ::: List(f.name)
-  }
-
-  if(params.isEmpty)
-    params = params ::: List("data")
-
+  f.fields.foreach{f => params = params ::: List(f.name) }
   params.mkString(", ")
-  
+}
+
+def functionFields(f: Function): String = {
+  var params = List[String]()
+  f.fields.foreach{f => params = params ::: List(f.name) }
+  params.mkString(", ")
 }
 
 def ftype(function: Function): String = {
@@ -49,9 +45,9 @@ def functionUrl(f: Function): String = {
   f.url.split("/").map { case s =>
     f.urlArgs.foreach { urlarg =>
       if(urlarg.name == s)
-        list = list ::: List("${" + s + "}")
+        list = list ::: List("'+" + s + "+'")
     }
-    if(!list.contains("${"+s+"}"))
+    if(!list.contains("'+" + s + "+'"))
       list = list ::: List(s)
   }
   list.mkString("/")
@@ -70,33 +66,17 @@ generate {
 
     file(s"${service.name.toPascal}.js") {
 
-      block(s"function ${service.name.toPascal}()"){
-
+      ln(s"""angular.module("app", ['ngRoute']).service("${service.name.toPascal}", ['""" + """$""" + s"""http', ${service.name.toPascal}]);""")
+      block(s"function ${service.name.toPascal}("+"""$""" + "http)"){
         service.functions.foreach { f =>
-          block(s"this.${f.name.toCamel} = function(${functionParams(f)}, done)"){
-            ln("$." + "ajax({")
-            ln(s"""type: "${f.method}",""")
-            ln(s"url: `${service.serviceUrl}${functionUrl(f)}`,")
-
-            if(functionParams(f).contains("json"))
-              ln(s"data: json,")
+          block(s"this.${f.name.toCamel} = function(${functionParams(f)})"){
+            var funcFieldsList = functionFields(f)
+            if(!funcFieldsList.isEmpty)
+              ln("return $" + s"http.${f.method}('${service.serviceUrl}${functionUrl(f)}', ${functionFields(f)})")
             else
-              ln(s"data: ${functionParams(f)},")
-
-            ln(s"success: function(data) {")
-            if(ftype(f) == "void")
-              ln(s"done;")
-            else ln(s"done(JSON.parse(data));")
-            ln("},")
-            block(s" error: function(XMLHttpRequest, textStatus, errorThrown) ") {
-              ln(s"console.log(XMLHttpRequest);")
-              ln(s"console.log(XMLHttpRequest.status);")
-              ln(s"console.log(errorThrown);")
-            }
-            ln(s"});")
+              ln("return $" + s"http.${f.method}('${service.serviceUrl}${functionUrl(f)}')")
           }
         }
-
       }
 
     }

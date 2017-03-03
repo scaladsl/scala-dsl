@@ -20,8 +20,6 @@ def urlArgType(urlArg: UrlArgument): String = {
   baseType
 }
 
-
-
 def functionParams(f: Function): String = {
   var params = List[String]()
   f.urlArgs.foreach{arg => params = params ::: List(urlArgType(arg) + " " + arg.name.toCamel) }
@@ -36,7 +34,7 @@ def ftype(function: Function): String = {
     case f: FloatDatatype => "java.lang.Double"
     case b: BoolDatatype => "java.lang.Boolean"
     case u: UuidDatatype => "java.util.UUID"
-    case v: VoidDatatype => "java.lang.Void"
+    case v: VoidDatatype => "void"
     case d: DateDatatype => "java.lang.Date"
 
     case _ => function.datatype
@@ -52,7 +50,7 @@ def ftype(function: Function): String = {
   function.modifier match {
     case "required" => baseType
     case "optional" => s"java.util.Option<$baseType>"
-    case "repeated" => s"java.collection.List<$baseType>"
+    case "repeated" => s"java.util.List<$baseType>"
     case x => throw new IllegalArgumentException(s"Invalid modifier: $x")
   }
 }
@@ -82,6 +80,7 @@ def jtype(field: Field): String = {
     case "repeated" => s"java.collection.List<$baseType>"
     case x => throw new IllegalArgumentException(s"Invalid modifier: $x")
   }
+
 }
 
 generate {

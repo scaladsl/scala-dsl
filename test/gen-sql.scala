@@ -9,13 +9,17 @@ def sqlite(dt: Datatype): String = {
   }
 }
 
+def error(error: String): String ={
+  error
+}
+
 def nullable(field: Field): String = {
   if( field.modifier == "required" )
     "not null"
   else if ( field.modifier == "optional" )
     "null"
   else
-    throw new IllegalArgumentException(s"invalid field type: ${field}")
+    error(s"invalid field type: ${field}")
 }
 
 def hasPrimaryKey(s: Structure): Boolean = s.fields.find(_.name == "id").isDefined

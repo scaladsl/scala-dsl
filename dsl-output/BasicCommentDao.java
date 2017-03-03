@@ -1,4 +1,10 @@
 package model;
+
+import java.sql.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.lang.Throwable;
+import connection.*;
 class BasicCommentDao{
 
   private Connection connection;
@@ -22,7 +28,7 @@ class BasicCommentDao{
     try{
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       String stringDateISO = df.format(comment.submittedAt);
-      String sql = "insert into comment(id, articleId, author, content, submittedAt) values(?, ?, ?, ?, ?)";
+      String sql = "insert into comment(id, article_id, author, content, submitted_at) values(?, ?, ?, ?, ?)";
       ps = getPrepareStatement(sql);
       ps.setString(1, comment.id.toString());
       ps.setString(2, comment.articleId.toString());
@@ -38,7 +44,7 @@ class BasicCommentDao{
     try{
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       String stringDateISO = df.format(comment.submittedAt);
-      String sql = "update comment set where id = ?;";
+      String sql = "update comment set id = ?, articleId = ?, author = ?, content = ?, submittedAt = ?, where id = ?;";
       ps = getPrepareStatement(sql);
       ps.setString(1, comment.id.toString());
       ps.setString(2, comment.articleId.toString());
@@ -60,7 +66,7 @@ class BasicCommentDao{
     finally { closePrepareStatement(ps); }
   }
   public List<Comment> selectAll() throws Throwable{
-    List<comment> commentList = null;
+    List<Comment> commentList = null;
     PreparedStatement ps = null;
     try{
       String sql = "Select * from comment";
@@ -71,10 +77,10 @@ class BasicCommentDao{
       while (rs.next()){
         Comment comment = new Comment();
         comment.id = java.util.UUID.fromString(rs.getString("id"));
-        comment.articleId = java.util.UUID.fromString(rs.getString("articleId"));
+        comment.articleId = java.util.UUID.fromString(rs.getString("article_id"));
         comment.author = rs.getString("author");
         comment.content = rs.getString("content");
-        comment.submittedAt = formatter.parse(rs.getString("submittedAt"));
+        comment.submittedAt = formatter.parse(rs.getString("submitted_at"));
         commentList.add(comment);
       }
     }
@@ -89,38 +95,39 @@ class BasicCommentDao{
       SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       comment = new Comment();
       ps = getPrepareStatement(sql);
-      ps.setString(1, id.toString());
       ResultSet rs = ps.executeQuery();
       while (rs.next()){
         comment.id = java.util.UUID.fromString(rs.getString("id"));
-        comment.articleId = java.util.UUID.fromString(rs.getString("articleId"));
+        comment.articleId = java.util.UUID.fromString(rs.getString("article_id"));
         comment.author = rs.getString("author");
         comment.content = rs.getString("content");
-        comment.submittedAt = formatter.parse(rs.getString("submittedAt"));
+        comment.submittedAt = formatter.parse(rs.getString("submitted_at"));
       }
     }
     finally { closePrepareStatement(ps); }
     return comment;
   }
-  public Comment selectBy(java.util.UUID articleId) throws Throwable{
-    Comment comment = null;
+  public List<Comment> selectByArticleId(java.util.UUID articleId) throws Throwable{
+    List<Comment> commentList = null;
     PreparedStatement ps = null;
     try {
       String sql = "Select * from comment where article_id = ? ;";
       SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-      comment = new Comment();
+      commentList = new ArrayList<Comment>();
       ps = getPrepareStatement(sql);
       ps.setString(1, articleId.toString());
       ResultSet rs = ps.executeQuery();
       while (rs.next()){
+        Comment comment = new Comment();
         comment.id = java.util.UUID.fromString(rs.getString("id"));
-        comment.articleId = java.util.UUID.fromString(rs.getString("articleId"));
+        comment.articleId = java.util.UUID.fromString(rs.getString("article_id"));
         comment.author = rs.getString("author");
         comment.content = rs.getString("content");
-        comment.submittedAt = formatter.parse(rs.getString("submittedAt"));
+        comment.submittedAt = formatter.parse(rs.getString("submitted_at"));
+        commentList.add(comment);
       }
     }
     finally { closePrepareStatement(ps); }
-    return comment;
+    return commentList;
   }
 }
