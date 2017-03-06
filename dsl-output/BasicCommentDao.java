@@ -87,11 +87,11 @@ class BasicCommentDao{
     finally { closePrepareStatement(ps); }
     return commentList;
   }
-  public Comment selectByKey() throws Throwable{
+  public Comment selectByKey(id) throws Throwable{
     Comment comment = null;
     PreparedStatement ps = null;
     try {
-      String sql = "Select * from comment where  ;";
+      String sql = "Select * from comment where id = ?;";
       SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       comment = new Comment();
       ps = getPrepareStatement(sql);

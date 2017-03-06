@@ -28,6 +28,8 @@ def jtype(field: Field): String = {
 
 }
 
+def hasPrimaryKey(s: Structure): Boolean = s.fields.find(_.name == "id").isDefined
+
 generate {
 
   begin ALL { root =>
@@ -167,35 +169,37 @@ generate {
           ln(s"return ${structure.name}List;")
         }
 
-        var key = structure.fields.filter(_.has('pkey)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
-        var keyforsql = structure.fields.filter(_.has('pkey)).map(f=> f.name + " = ?").mkString(", ")
-        block(s"public ${structure.name.toPascal} selectByKey($key) throws Throwable"){
-          ln(s"${structure.name.toPascal} ${structure.name} = null;")
-          ln(s"PreparedStatement ps = null;")
-          block(s"try "){
-            ln(s"""String sql = "Select * from ${structure.name} where $keyforsql ;";""")
-            ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
-            ln(s"${structure.name} = new ${structure.name.toPascal}();")
-            ln(s"ps = getPrepareStatement(sql);")
-            structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
-              f.datatype match {
-                case u: UuidDatatype => ln(s"ps.setString(1, ${f.name.toCamel}.toString());")
-                case _=> ""
-              }
-            }
-            ln(s"ResultSet rs = ps.executeQuery();")
-            block(s"while (rs.next())"){
-              structure.fields.foreach{f=>
+        // var key = structure.fields.filter(_.has('pkey)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
+        // var keyforsql = structure.fields.filter(_.has('pkey)).map(f=> f.name + " = ?").mkString(", ")
+        if ( hasPrimaryKey(structure) ) {
+          block(s"public ${structure.name.toPascal} selectByKey(id) throws Throwable"){
+            ln(s"${structure.name.toPascal} ${structure.name} = null;")
+            ln(s"PreparedStatement ps = null;")
+            block(s"try "){
+              ln(s"""String sql = "Select * from ${structure.name} where id = ?;";""")
+              ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
+              ln(s"${structure.name} = new ${structure.name.toPascal}();")
+              ln(s"ps = getPrepareStatement(sql);")
+              structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
                 f.datatype match {
-                  case u: UuidDatatype => ln(s"""${structure.name}.${f.name.toCamel} = ${jtype(f)}.fromString(rs.getString("${f.name}"));""")
-                  case d: DateDatatype => ln(s"""${structure.name}.${f.name.toCamel} = formatter.parse(rs.getString("${f.name}"));""")
-                  case _ => ln(s"""${structure.name}.${f.name.toCamel} = rs.getString("${f.name}");""")
+                  case u: UuidDatatype => ln(s"ps.setString(1, ${f.name.toCamel}.toString());")
+                  case _=> ""
+                }
+              }
+              ln(s"ResultSet rs = ps.executeQuery();")
+              block(s"while (rs.next())"){
+                structure.fields.foreach{f=>
+                  f.datatype match {
+                    case u: UuidDatatype => ln(s"""${structure.name}.${f.name.toCamel} = ${jtype(f)}.fromString(rs.getString("${f.name}"));""")
+                    case d: DateDatatype => ln(s"""${structure.name}.${f.name.toCamel} = formatter.parse(rs.getString("${f.name}"));""")
+                    case _ => ln(s"""${structure.name}.${f.name.toCamel} = rs.getString("${f.name}");""")
+                  }
                 }
               }
             }
+            ln(s"finally { closePrepareStatement(ps); }")
+            ln(s"return ${structure.name};")
           }
-          ln(s"finally { closePrepareStatement(ps); }")
-          ln(s"return ${structure.name};")
         }
 
         if ( !structure.fields.filter(_.has('ref)).map(f=> f).isEmpty ) { 

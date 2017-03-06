@@ -44,7 +44,7 @@ class BasicArticleDao{
     try{
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       String stringDateISO = df.format(article.submittedAt);
-      String sql = "update article set title = ?, author = ?, content = ?, submittedAt = ?, where id = ?;";
+      String sql = "update article set id = ?, title = ?, author = ?, content = ?, submittedAt = ?, where id = ?;";
       ps = getPrepareStatement(sql);
       ps.setString(1, article.id.toString());
       ps.setString(2, article.title);
@@ -87,15 +87,14 @@ class BasicArticleDao{
     finally { closePrepareStatement(ps); }
     return articleList;
   }
-  public Article selectByKey(java.util.UUID id) throws Throwable{
+  public Article selectByKey(id) throws Throwable{
     Article article = null;
     PreparedStatement ps = null;
     try {
-      String sql = "Select * from article where id = ? ;";
+      String sql = "Select * from article where id = ?;";
       SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       article = new Article();
       ps = getPrepareStatement(sql);
-      ps.setString(1, id.toString());
       ResultSet rs = ps.executeQuery();
       while (rs.next()){
         article.id = java.util.UUID.fromString(rs.getString("id"));

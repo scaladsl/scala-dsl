@@ -4,7 +4,7 @@
   'article ::= struct {
 
     // Article identity
-    'id required 'uuid ('pkey -> true)
+    'id required 'uuid
 
     // Article title
     'title required 'string
