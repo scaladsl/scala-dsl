@@ -29,7 +29,8 @@ object mainGen {
     }
     config.append("}")
     val settings = new Settings()
-    settings.classpath.append("./build/generator");
+    settings.classpath.append("./build/generator")
+    settings.classpath.append("libs/scala-parser-combinators_2.12-1.0.4.jar")
     settings.usejavacp.value = true
     val writer = new java.io.StringWriter()
     val imain = new IMain(settings, new java.io.PrintWriter(writer))

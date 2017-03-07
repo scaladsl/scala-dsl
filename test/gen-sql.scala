@@ -15,8 +15,10 @@ def nullable(field: Field): String = {
   else if ( field.modifier == "optional" )
     "null"
   else
-    error(s"invalid field type: ${field}")
+    throw new IllegalArgumentException(s"invalid field type: ${field}")
 }
+
+def hasPrimaryKey(s: Structure): Boolean = s.fields.find(_.name == "id").isDefined
 
 generate {
 
@@ -32,16 +34,17 @@ generate {
   begin STRUCTURE { structure =>
     block(s"create table ${structure.name}") {
       structure.fields.foreach { f =>
-        ln(s"  ${f.name} ${sqlite(f.datatype)} ${nullable(f)},")
+        ln(s"-- ${f.comment}")
+        ln(s"${f.name} ${sqlite(f.datatype)} ${nullable(f)},")
       }
 
-      val fkeys = structure.fields.filter(_.has('ref))
-      val pkeys = structure.fields.filter(_.has('pkey)).map(_.name)
-      ln(s"  primary key ( ${pkeys.mkString(", ")} )")
-      fkeys.foreach{f=>
-        ln(s"  FOREIGN KEY(${f.name}) REFERENCES ${structure.name}(${f.name})")
+      structure.fields.filter(_.has('ref)).foreach { f =>
+        ln(s"foreign key ( ${f.name} ) references ${f('ref)}( id ),")
+      }
+
+      if ( hasPrimaryKey(structure) ) {
+        ln(s"primary key ( id )")
       }
     }
   }
-
 }

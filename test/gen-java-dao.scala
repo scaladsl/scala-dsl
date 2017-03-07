@@ -22,14 +22,13 @@ def jtype(field: Field): String = {
   field.modifier match {
     case "required" => baseType
     case "optional" => s"java.util.Option<$baseType>"
-    case "repeated" => s"java.collection.List<$baseType>"
+    case "repeated" => s"java.util.List<$baseType>"
     case x => throw new IllegalArgumentException(s"Invalid modifier: $x")
   }
 
 }
 
 generate {
-
   begin ALL { root =>
     options.blockStart = "{"
     options.blockEnd = "}"
@@ -39,186 +38,183 @@ generate {
 
   begin STRUCTURE { structure =>
     file(s"Basic${structure.name.toPascal}Dao.java") {
-      ln(s"package ${structure.path};")
-      block(s"class Basic${structure.name.toPascal}Dao"){
-        bigBlock(s"""
-          |  private Connection connection;
-          |
-          |	 public void setConnection(Connection connection){
-		      |    this.connection = connection;
-          |  };
-          |
-          |  protected PreparedStatement getPrepareStatement(String sql) throws Throwable {
-          |    PreparedStatement ps = null;
-          |    ps = connection.prepareStatement(sql);
-          |    return ps;
-          |  }
-	        |
-          |  protected void closePrepareStatement(PreparedStatement ps) throws Throwable {
-          |    if (ps != null) ps.close();
-          |  }
-          |
+      ln("package basicDao;")
+      bigBlock(s"""
+          |import java.sql.*;
+          |import java.util.*;
+          |import java.text.SimpleDateFormat;
+		      |import java.lang.Throwable;
+          |import com.dataSource.dbcp2.DataSource;
+          |import model.${structure.name.toPascal};\n
           |""")
+             
+      block(s"public class Basic${structure.name.toPascal}Dao extends BaseDao"){
+
+        block(s"protected Basic${structure.name.toPascal}Dao (DataSource ds)"){
+          ln("super(ds);")
+        }
 
         block(s"public void insert(${structure.name.toPascal} ${structure.name}) throws Throwable") {
-          ln(s"PreparedStatement ps = null;")
-          block(s"try"){
+          var sqlParam = structure.fields.map(f=> s"${f.name}").mkString(", ")
+          var sqlValues = structure.fields.map(f=> s"?").mkString(", ")
+          ln(s"""final String SQL_INSERT = "insert into ${structure.name}($sqlParam) values($sqlValues)";""")
+
+          block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_INSERT))"){
             ln(s"""SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
             structure.fields.foreach{f=>
               f.datatype match {
-                case d: DateDatatype => ln(s"String stringDateISO = df.format(${structure.name}.${f.name.toCamel});")
+                case d: DateDatatype => ln(s"String stringDateISO = df.format(${structure.name}.get${f.name.toPascal}());")
                 case _ => ""
               }
             }
-            var sqlParam = structure.fields.map(f=> s"${f.name.toCamel}").mkString(", ")
-            var sqlValues = structure.fields.map(f=> s"?").mkString(", ")
-            ln(s"""String sql = "insert into ${structure.name}($sqlParam) values($sqlValues)";""")
-            ln(s"ps = getPrepareStatement(sql);")
             var i = 0;
             structure.fields.foreach{f=>
               i += 1
               f.datatype match {
-                case u: UuidDatatype => ln(s"ps.setString($i, ${structure.name}.${f.name.toCamel}.toString());")
+                case u: UuidDatatype => ln(s"ps.setString($i, ${structure.name}.get${f.name.toPascal}().toString());")
                 case d: DateDatatype => ln(s"ps.setString($i, stringDateISO);")
-                case _ => ln(s"ps.setString($i, ${structure.name}.${f.name.toCamel});")
+                case _ => ln(s"ps.setString($i, ${structure.name}.get${f.name.toPascal}());")
               }
             }
             ln(s"ps.executeUpdate();")
           }
-          ln(s"finally { closePrepareStatement(ps); }")
         }
 
         block(s"public void update(${structure.name.toPascal} ${structure.name}) throws Throwable") {
-          ln(s"PreparedStatement ps = null;")
-          block(s"try"){
+          var sqlParam = ""
+          var filtredFildsPkey = structure.fields.filter(_.has('pkey) == false).map(_.name.toCamel)
+          filtredFildsPkey.foreach{ f =>
+              sqlParam += s"${f} = ?, "
+            }
+          sqlParam = sqlParam + s"where id = ?"
+          ln(s"""final String SQL_UPDATE = "update ${structure.name} set $sqlParam;";""")
+          block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_UPDATE))"){
             ln(s"""SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
             structure.fields.foreach{f=>
-              f.datatype match {
-                case d: DateDatatype => ln(s"String stringDateISO = df.format(${structure.name}.${f.name.toCamel});")
+              f.datatype match { 
+                case d: DateDatatype => ln(s"String stringDateISO = df.format(${structure.name}.get${f.name.toPascal}());")
                 case _ => ""
               }
             }
-            var sqlParam = ""
-            var filtredFildsPkey = structure.fields.filter(_.has('pkey)).map(f=> f)
-            filtredFildsPkey.foreach{f=>
-              sqlParam += s"${f.name.toCamel} = ?, "
-            }
-            sqlParam = sqlParam + s"where id = ?"
-
-            ln(s"""String sql = "update ${structure.name} set $sqlParam;";""")
-            ln(s"ps = getPrepareStatement(sql);")
             var i = 0
             structure.fields.foreach{f=>
               i += 1
               f.datatype match {
-                case u: UuidDatatype => ln(s"ps.setString($i, ${structure.name}.${f.name.toCamel}.toString());")
+                case u: UuidDatatype => ln(s"ps.setString($i, ${structure.name}.get${f.name.toPascal}().toString());")
                 case d: DateDatatype => ln(s"ps.setString($i, stringDateISO);")
-                case _ => ln(s"ps.setString($i, ${structure.name}.${f.name.toCamel});")
+                case _ => ln(s"ps.setString($i, ${structure.name}.get${f.name.toPascal}());")
               }
             }
             ln(s"ps.executeUpdate();")
           }
-            ln(s"finally { closePrepareStatement(ps); }")
         }
 
         block(s"public void remove(UUID id) throws Throwable"){
-          ln(s"PreparedStatement ps = null;")
-          block(s"try"){
-            ln(s"""String sql = "delete from ${structure.name} where id =?;";""")
-            ln(s"ps = getPrepareStatement(sql);")
+          ln(s"""final String SQL_DELETE = "delete from ${structure.name} where id =?;";""")
+          block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_DELETE))"){
             ln(s"ps.setString(1, id.toString());")
             ln(s"ps.executeUpdate();")
           }
-          ln(s"finally { closePrepareStatement(ps); }")
         }
 
         block(s"public List<${structure.name.toPascal}> selectAll() throws Throwable"){
-          ln(s"List<${structure.name}> ${structure.name}List = null;")
-          ln(s"PreparedStatement ps = null;")
-          block(s"try"){
-            ln(s"""String sql = "Select * from ${structure.name}";""")
-            ln(s"${structure.name}List = new ArrayList<${structure.name.toPascal}>();")
+          ln(s"""final String SQL_SELECT_ALL = "Select * from ${structure.name}";""")
+          block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_ALL))"){
+            ln(s"List<${structure.name.toPascal}> ${structure.name}List = new ArrayList<${structure.name.toPascal}>();")
             ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
-            ln(s"ps = getPrepareStatement(sql);")
             ln(s"ResultSet rs = ps.executeQuery();")
             block(s"while (rs.next())"){
               ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
               structure.fields.foreach{f=>
                 f.datatype match {
-                  case u: UuidDatatype => ln(s"""${structure.name}.${f.name.toCamel} = ${jtype(f)}.fromString(rs.getString("${f.name.toCamel}"));""")
-                  case d: DateDatatype => ln(s"""${structure.name}.${f.name.toCamel} = formatter.parse(rs.getString("${f.name.toCamel}"));""")
-                  case _ => ln(s"""${structure.name}.${f.name.toCamel} = rs.getString("${f.name.toCamel}");""")
+                  case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
+                  case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(formatter.parse(rs.getString("${f.name}")));""")
+                  case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                 }
               }
               ln(s"${structure.name}List.add(${structure.name});")
             }
+            ln(s"return ${structure.name}List;")
           }
-          ln(s"finally { closePrepareStatement(ps); }")
-          ln(s"return ${structure.name}List;")
         }
 
         var key = structure.fields.filter(_.has('pkey)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
-        var keyforsql = structure.fields.filter(_.has('pkey)).map(f=> f.name + " = ?").mkString(", ")
         block(s"public ${structure.name.toPascal} selectByKey($key) throws Throwable"){
-          ln(s"${structure.name.toPascal} ${structure.name} = null;")
-          ln(s"PreparedStatement ps = null;")
-          block(s"try "){
-            ln(s"""String sql = "Select * from ${structure.name} where $keyforsql ;";""")
+          ln(s"""final String SQL_SELECT_BY_KEY = "Select * from ${structure.name} where id = ? ;";""")
+          block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_KEY))"){
             ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
-            ln(s"${structure.name} = new ${structure.name.toPascal}();")
-            ln(s"ps = getPrepareStatement(sql);")
+            ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
             structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
               f.datatype match {
                 case u: UuidDatatype => ln(s"ps.setString(1, ${f.name.toCamel}.toString());")
                 case _=> ""
               }
             }
-            ln(s"ps.setString(1, id.toString());")
             ln(s"ResultSet rs = ps.executeQuery();")
             block(s"while (rs.next())"){
               structure.fields.foreach{f=>
                 f.datatype match {
-                  case u: UuidDatatype => ln(s"""${structure.name}.${f.name.toCamel} = ${jtype(f)}.fromString(rs.getString("${f.name.toCamel}"));""")
-                  case d: DateDatatype => ln(s"""${structure.name}.${f.name.toCamel} = formatter.parse(rs.getString("${f.name.toCamel}"));""")
-                  case _ => ln(s"""${structure.name}.${f.name.toCamel} = rs.getString("${f.name.toCamel}");""")
+                  case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
+                  case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(formatter.parse(rs.getString("${f.name}")));""")
+                  case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                 }
               }
             }
+            ln(s"return ${structure.name};")
           }
-          ln(s"finally { closePrepareStatement(ps); }")
-          ln(s"return ${structure.name};")
+          
         }
 
-        var fkey = structure.fields.filter(_.has('ref)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
-        var fkeyforsql = structure.fields.filter(_.has('ref)).map(f=> f.name + " = ?").mkString(", ")
-        block(s"public ${structure.name.toPascal} selectBy($fkey) throws Throwable"){
-          ln(s"${structure.name.toPascal} ${structure.name} = null;")
-          ln(s"PreparedStatement ps = null;")
-          block(s"try "){
-            ln(s"""String sql = "Select * from ${structure.name} where $fkeyforsql ;";""")
-            ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
-            ln(s"${structure.name} = new ${structure.name.toPascal}();")
-            ln(s"ps = getPrepareStatement(sql);")
-            structure.fields.filter(_.has('ref)).map(f=>f).foreach{f=>
-              ln(s"ps.setString(1, ${f.name.toCamel}.toString());")
-            }
-            ln(s"ResultSet rs = ps.executeQuery();")
-            block(s"while (rs.next())"){
-              structure.fields.foreach{f=>
-                f.datatype match {
-                  case u: UuidDatatype => ln(s"""${structure.name}.${f.name.toCamel} = ${jtype(f)}.fromString(rs.getString("${f.name.toCamel}"));""")
-                  case d: DateDatatype => ln(s"""${structure.name}.${f.name.toCamel} = formatter.parse(rs.getString("${f.name.toCamel}"));""")
-                  case _ => ln(s"""${structure.name}.${f.name.toCamel} = rs.getString("${f.name.toCamel}");""")
-                }
+        if ( !structure.fields.filter(_.has('ref)).map(f=> f).isEmpty ) {
+          var fkey = structure.fields.filter(_.has('ref)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
+          var fkeyforsql = structure.fields.filter(_.has('ref)).map(f=> f.name + " = ?").mkString(", ")
+          var fkeyName = structure.fields.filter(_.has('ref)).map(f=> f.name.toPascal).mkString(" ")
+          block(s"public List<${structure.name.toPascal}> selectBy$fkeyName($fkey) throws Throwable"){
+            ln(s"""final String SQL_SELECT_BY_ARTICLE_ID = "Select * from ${structure.name} where $fkeyforsql ;";""")
+            block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_ARTICLE_ID))"){
+              ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
+              ln(s"List<${structure.name.toPascal}> ${structure.name}List = new ArrayList<${structure.name.toPascal}>();")
+              structure.fields.filter(_.has('ref)).map(f=>f).foreach{f=>
+                ln(s"ps.setString(1, ${f.name.toCamel}.toString());")
               }
+              ln(s"ResultSet rs = ps.executeQuery();")
+              block(s"while (rs.next())"){
+                ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
+                structure.fields.foreach{f=>
+                  f.datatype match {
+                    case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
+                    case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(formatter.parse(rs.getString("${f.name}")));""")
+                    case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
+                  }
+                }
+                ln(s"${structure.name}List.add(${structure.name});")
+              }
+              ln(s"return ${structure.name}List;")
             }
           }
-          ln(s"finally { closePrepareStatement(ps); }")
-          ln(s"return ${structure.name};")
         }
-       
+
       }
-
     }
+     file(s"BaseDao.java") {
+      ln("package basicDao;")
+      bigBlock(s"""
+          |import java.sql.*;
+          |import java.util.*;
+          |import java.text.SimpleDateFormat;
+		      |import java.lang.Throwable;
+          |import com.dataSource.dbcp2.DataSource;
+          |
+          |public class BaseDao {
+          |    protected DataSource ds;
+          |
+          |    protected BaseDao(DataSource ds) {
+          |        if ( ds == null )
+          |            throw new IllegalArgumentException("DataSource is not specified.");
+          |       
+          |        this.ds = ds;
+          |    }
+          |}""")
+     }
   }
 }

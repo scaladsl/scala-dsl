@@ -51,6 +51,7 @@ object gdsl {
 
   def generate(block: => Unit) {
     block
+
     val sb = new StringBuilder
     var line = readLine
     while ( line != null ) {
@@ -185,7 +186,9 @@ object gdsl {
 
     val comment = this("comment", "")
 
-    def apply(name: String): String = (attributes get name).get
+    def apply(key: String): String = (attributes get key).get
+
+    def apply(key: Symbol): String = apply(key.name)
 
     def apply(name: String, defaultVal: String): String = attributes getOrElse (name, defaultVal)
 
@@ -250,6 +253,7 @@ object gdsl {
     def modifier = this("return-modifier")
     def datatype: Datatype = createDatatype(this("return-datatype"))
     def method = this("method")
+    def url = this("url")
   }
 
   case class UrlArgument(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {

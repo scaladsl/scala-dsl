@@ -26,9 +26,10 @@ object mainDef {
   
   def main(args: Array[String]) {
     if(args.length > 1) throw new IllegalArgumentException(s"There mast be only one filepath")
-    val settings = new Settings()
-    settings.classpath.append("./build/compiler")
-    settings.usejavacp.value = true    
+    val settings = new Settings( )
+    settings.classpath.append("build/compiler")
+    settings.classpath.append("libs/scala-parser-combinators_2.12-1.0.4.jar")
+    settings.usejavacp.value = true
     val writer = new java.io.StringWriter()
     val imain = new IMain(settings, new java.io.PrintWriter(writer))
     content.append("import dslc.CDSL._ \ndefine {\n")

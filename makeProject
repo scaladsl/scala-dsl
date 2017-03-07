@@ -1,0 +1,23 @@
+#!/bin/bash
+
+fsc -reset
+
+
+rm -rf build/*
+mkdir -p build/compiler
+mkdir -p build/generator
+mkdir -p dsl-output/
+
+
+# scalac -verbose -deprecation -d build/ src/main/scala/*.scala
+# scalac -deprecation -d build/ src/main/scala/*.scala
+
+# scalac -verbose -deprecation -d build/compiler src/main/scala/compiler.scala src/main/scala/mainDef.scala
+# scalac -deprecation -d build/compiler src/main/scala/compiler.scala src/main/scala/mainDef.scala
+# scalac -classpath :libs/scala-2.11/scala-parser-combinators-2.11.0-M4.jar -deprecation -d build/compiler/ src/main/scala/compiler.scala src/main/scala/mainDef.scala
+scalac -classpath :libs/scala-parser-combinators_2.12-1.0.4.jar -deprecation -d build/compiler/ src/main/scala/compiler.scala src/main/scala/mainDef.scala
+
+# scalac -verbose -deprecation -d build/generator src/main/scala/generator.scala src/main/scala/mainGen.scala
+# scalac -deprecation -d build/generator src/main/scala/generator.scala src/main/scala/mainGen.scala
+# scalac -classpath :libs/scala-2.11/scala-parser-combinators-2.11.0-M4.jar -deprecation -d build/generator src/main/scala/generator.scala src/main/scala/mainGen.scala
+scalac -classpath :libs/scala-parser-combinators_2.12-1.0.4.jar -deprecation -d build/generator src/main/scala/generator.scala src/main/scala/mainGen.scala

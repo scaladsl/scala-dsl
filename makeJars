@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# jar cvfe dslc.jar mainDef -C build/compiler/ . -C libs/scala-libs .
+# jar cfe dslc.jar mainDef -C build/compiler/ . -C libs/scala-libs .
+jar cvfe dslc.jar mainDef -C build/compiler/ . -C libs/dsl-scala-library-2.12.1 .
+
+# jar cvfe dslg.jar mainGen -C build/generator/ . -C libs/scala-libs .
+# jar cfe dslg.jar mainGen -C build/generator/ . -C libs/scala-libs .
+jar cvfe dslg.jar mainGen -C build/generator/ . -C libs/dsl-scala-library-2.12.1 .
