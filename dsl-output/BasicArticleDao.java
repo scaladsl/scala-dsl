@@ -44,7 +44,7 @@ class BasicArticleDao{
     try{
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       String stringDateISO = df.format(article.submittedAt);
-      String sql = "update article set id = ?, title = ?, author = ?, content = ?, submittedAt = ?, where id = ?;";
+      String sql = "update article set title = ?, author = ?, content = ?, submittedAt = ?, where id = ?;";
       ps = getPrepareStatement(sql);
       ps.setString(1, article.id.toString());
       ps.setString(2, article.title);

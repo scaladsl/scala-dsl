@@ -110,11 +110,8 @@ generate {
             }
             
             var sqlParam = ""
-            var filtredFildsPkey = structure.fields.filter(_.has('pkey) == false).map(_.name.toCamel)
-
-            filtredFildsPkey.foreach{ f =>
-                sqlParam += s"${f} = ?, "
-            }
+            var filtredFildsPkey = structure.fields.filter(_.name != "id").map(_.name.toCamel)
+            filtredFildsPkey.foreach{ f => sqlParam += s"${f} = ?, " }
             sqlParam = sqlParam + s"where id = ?"
 
             ln(s"""String sql = "update ${structure.name} set $sqlParam;";""")

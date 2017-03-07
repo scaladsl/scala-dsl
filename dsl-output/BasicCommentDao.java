@@ -44,7 +44,7 @@ class BasicCommentDao{
     try{
       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       String stringDateISO = df.format(comment.submittedAt);
-      String sql = "update comment set id = ?, articleId = ?, author = ?, content = ?, submittedAt = ?, where id = ?;";
+      String sql = "update comment set articleId = ?, author = ?, content = ?, submittedAt = ?, where id = ?;";
       ps = getPrepareStatement(sql);
       ps.setString(1, comment.id.toString());
       ps.setString(2, comment.articleId.toString());
