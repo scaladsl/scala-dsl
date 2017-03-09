@@ -37,14 +37,14 @@ generate {
 
 
   begin STRUCTURE { structure =>
-    file(s"Basic${structure.name.toPascal}Dao.java") {
-      ln("package basicDao;")
+    var pkg = "basicDao";
+    file(s"${pkg}/Basic${structure.name.toPascal}Dao.java") {
+      ln(s"package ${pkg};")
       bigBlock(s"""
-          |import java.sql.*;
           |import java.util.*;
+          |import java.sql.*;
           |import java.text.SimpleDateFormat;
-		      |import java.lang.Throwable;
-          |import com.dataSource.dbcp2.DataSource;
+          |import dataSource.dbcp2.DataSource;
           |import model.${structure.name.toPascal};\n
           |""")
              
@@ -196,14 +196,11 @@ generate {
 
       }
     }
-     file(s"BaseDao.java") {
-      ln("package basicDao;")
+
+    file(s"${pkg}/BaseDao.java") {
+      ln(s"package ${pkg};")
       bigBlock(s"""
-          |import java.sql.*;
-          |import java.util.*;
-          |import java.text.SimpleDateFormat;
-		      |import java.lang.Throwable;
-          |import com.dataSource.dbcp2.DataSource;
+          |import dataSource.dbcp2.DataSource;
           |
           |public class BaseDao {
           |    protected DataSource ds;
@@ -215,6 +212,6 @@ generate {
           |        this.ds = ds;
           |    }
           |}""")
-     }
+    }
   }
 }

@@ -111,21 +111,19 @@ generate {
   }
 
   begin SERVICE { service =>
+    var pkg = "sparkServices";
+    file(s"${pkg}/Spark${service.name.toPascal}.java") {
 
-    file(s"Spark${service.name.toPascal}.java") {
-
-      bigBlock(s"""package spark;
+      bigBlock(s"""package ${pkg};
         |
+        |import java.util.UUID;
+        |import javax.persistence.EntityNotFoundException;
         |import static spark.Spark.*;
         |import spark.template.velocity.VelocityTemplateEngine;
         |import spark.ModelAndView;
-        |import java.lang.Throwable;
-        |import java.util.*;
-        |import javax.persistence.EntityNotFoundException;
         |import com.google.gson.Gson;
         |import serviceImpl.*;
         |import json.*;
-        |import spark.*;
         |
         |""")
 
@@ -167,4 +165,3 @@ generate {
     }
   }
 }
-

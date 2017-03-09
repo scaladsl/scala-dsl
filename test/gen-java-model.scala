@@ -39,7 +39,7 @@ generate {
 
   begin STRUCTURE { structure =>
 
-    file(s"${structure.name.toPascal}.java") {
+    file(s"${structure.path}/${structure.name.toPascal}.java") {
       ln(s"package ${structure.path};")
       comment(structure)
       block(s"public class ${structure.name.toPascal}") {
@@ -61,4 +61,3 @@ generate {
     }
   }
 }
-

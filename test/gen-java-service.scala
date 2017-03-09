@@ -92,9 +92,9 @@ generate {
   }
 
   begin SERVICE { service =>
-
-    file(s"${service.name.toPascal}.java") {
-      ln(s"package service;")
+    var pkg = "service";
+    file(s"${pkg}/${service.name.toPascal}.java") {
+      ln(s"package ${pkg};\n")
       block(s"public interface ${service.name.toPascal}") {
         service.functions.foreach {f =>
           ln(s"public ${ftype(f)} ${f.name.toCamel}(${functionParams(f)}) throws java.lang.Throwable;")
