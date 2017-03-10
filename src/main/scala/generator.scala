@@ -69,10 +69,6 @@ object gdsl {
     if ( onEndAll != null ) onEndAll(root)
   }
 
-  // def config(name: String): String = {
-  //   "./"
-  // }
-
   def openFile(filename: String) {
     if ( currentFile != null ) {
       closeFile();

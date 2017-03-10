@@ -1,6 +1,5 @@
 package dslc
 
-
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Stack
 import scala.util.parsing.json._
@@ -63,7 +62,6 @@ object CDSL {
       else {
         s"${parent.fullName}::$name"
       }
-
     }
 
     def find(name: String): Option[Node] = children.find(_.name == name)
@@ -219,19 +217,19 @@ object CDSL {
     def ::=(tag: EntityTag): Unit = {
       if(name.contains("::")){
         val namespaces = name.split("::")
-        for( i <- 0 to namespaces.size -2 ){ AST.push(Node(namespaces(i), "namespace", AST.current))}    
+        for( i <- 0 to namespaces.size -2 ){ AST.push(Node(namespaces(i), "namespace", AST.current))}
         tag.node.name = namespaces.last
         tag.node.parent = AST.current
-        AST.push(tag.node)             
+        AST.push(tag.node)
         tag.block
         namespaces.foreach{_ => AST.pop()}
       }
-       else{
-          tag.node.name = name
-          AST.push(tag.node)             
-          tag.block
-          AST.pop()
-       }
+      else{
+        tag.node.name = name
+        AST.push(tag.node)
+        tag.block
+        AST.pop()
+      }
     }
 
     def name = id.name
@@ -281,7 +279,7 @@ object CDSL {
             node.attributes += "modifier" -> modifier
             typeAttr
           }
-      } 
+      }
     }
 
     private def typeAttr(): Unit = {

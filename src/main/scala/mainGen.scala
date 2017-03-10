@@ -28,20 +28,24 @@ object mainGen {
       config.append(s"""val ${k} = "${value}";""")
     }
     config.append("}")
+
     val settings = new Settings()
-    settings.classpath.append("./build/generator")
+    settings.classpath.append("./build/generator");
     settings.classpath.append("libs/scala-parser-combinators_2.12-1.0.4.jar")
     settings.usejavacp.value = true
     val writer = new java.io.StringWriter()
     val imain = new IMain(settings, new java.io.PrintWriter(writer))
-    val content = scala.io.Source.fromFile(file).mkString
+
     var statusConf = imain.interpret(config.toString)
     if(statusConf.toString != "Success")
       println(writer.toString())
+
+    val content = scala.io.Source.fromFile(file).mkString
     var statusCont = imain.interpret(content)
     if(statusCont.toString != "Success")
       println(writer.toString())
     
   }
+
 }
 

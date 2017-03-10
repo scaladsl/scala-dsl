@@ -23,7 +23,6 @@ public class SparkCommentService{
     }
     return jsonInString;
     });
-
     post("/api/articles/:article_id/comments", (req, res) -> {
     try{
       new CommentServiceImpl().add(UUID.fromString(req.params(":article_id")), CommentFromJson.getComment(req.body()));
@@ -36,10 +35,9 @@ public class SparkCommentService{
     }
     return "";
     });
-
     put("/api/articles/:article_id/comments/:id", (req, res) -> {
     try{
-      new CommentServiceImpl().update(UUID.fromString(req.params(":article_id")), UUID.fromString(req.params(":id")), CommentFromJson.getComment(req.body()));
+      new CommentServiceImpl().save(UUID.fromString(req.params(":article_id")), UUID.fromString(req.params(":id")), CommentFromJson.getComment(req.body()));
     }
     catch (EntityNotFoundException e){
       halt(404, "Not Found");
@@ -49,7 +47,6 @@ public class SparkCommentService{
     }
     return "";
     });
-
     delete("/api/articles/:article_id/comments/:id", (req, res) -> {
     try{
       new CommentServiceImpl().remove(UUID.fromString(req.params(":article_id")), UUID.fromString(req.params(":id")));
@@ -62,6 +59,5 @@ public class SparkCommentService{
     }
     return "";
     });
-
   }
 }

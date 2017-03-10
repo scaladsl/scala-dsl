@@ -41,7 +41,7 @@ def functionParams(f: Function): String = {
   }
 
   f.fields.foreach{f =>
-    params = params ::: List(s"""${f.name.toPascal}FromJson.get${f.name.toPascal}(req.body())""")
+    params = params ::: List(s"""new Gson().fromJson(req.body(), ${f.path}.${f.datatype.name.toPascal}.class)""")
   }
   params.mkString(", ")
 }
@@ -123,7 +123,6 @@ generate {
         |import spark.ModelAndView;
         |import com.google.gson.Gson;
         |import serviceImpl.*;
-        |import json.*;
         |
         |""")
 

@@ -12,7 +12,8 @@ public class SparkArticleService{
     get("/api/articles/:id", (req, res) -> {
     String jsonInString = "";
     try{
-      jsonInString = new Gson().toJson(new ArticleServiceImpl().retrieveById(UUID.fromString(req.params(":id")));
+      model.Article articleService = new ArticleServiceImpl().retrieveById(UUID.fromString(req.params(":id")));
+      jsonInString = new Gson().toJson(articleService);
     }
     catch (EntityNotFoundException e){
       halt(404, "Not Found");
@@ -22,7 +23,6 @@ public class SparkArticleService{
     }
     return jsonInString;
     });
-
     get("/api/articles", (req, res) -> {
     String jsonInString = "";
     try{
@@ -37,7 +37,6 @@ public class SparkArticleService{
     }
     return jsonInString;
     });
-
     post("/api/articles", (req, res) -> {
     try{
       new ArticleServiceImpl().add(ArticleFromJson.getArticle(req.body()));
@@ -50,10 +49,9 @@ public class SparkArticleService{
     }
     return "";
     });
-
     put("/api/articles/:id", (req, res) -> {
     try{
-      new ArticleServiceImpl().update(UUID.fromString(req.params(":id")), ArticleFromJson.getArticle(req.body()));
+      new ArticleServiceImpl().save(UUID.fromString(req.params(":id")), ArticleFromJson.getArticle(req.body()));
     }
     catch (EntityNotFoundException e){
       halt(404, "Not Found");
@@ -63,7 +61,6 @@ public class SparkArticleService{
     }
     return "";
     });
-
     delete("/api/articles/:id", (req, res) -> {
     try{
       new ArticleServiceImpl().remove(UUID.fromString(req.params(":id")));
@@ -76,6 +73,5 @@ public class SparkArticleService{
     }
     return "";
     });
-
   }
 }

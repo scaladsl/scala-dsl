@@ -27,7 +27,15 @@ def jtype(field: Field): String = {
   }
 }
 
-def comment(e: Entity): Unit = { if(e.comment != "") ln(s"/** ${e.comment} */") }
+def comment(e: Entity, s: String = ""): Unit = {
+  var c = e.comment
+  ln("")
+  if(c != "")
+    s match {
+      case "" => ln(s"/** $c */") 
+      case _  => ln(s"/** $s ${c.trim.toCamel} */")
+    }
+}
 
 generate {
 
@@ -48,11 +56,11 @@ generate {
           ln(s"private ${jtype(f)} ${f.name.toCamel};")
         }
         structure.fields.foreach { f =>
-          ln(s"/** get method for ${f.name.toCamel} */")
+          comment(f, "Gets")
           block(s"public ${jtype(f)} get${f.name.toPascal}()"){
             ln(s"return this.${f.name.toCamel};")
           }
-          ln(s"/** set method for ${f.name.toCamel} */")
+          comment(f, "Sets")
           block(s"public void set${f.name.toPascal}( ${jtype(f)} ${f.name.toCamel})"){
             ln(s"this.${f.name.toCamel} = ${f.name.toCamel};")
           }

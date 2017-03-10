@@ -43,7 +43,6 @@ generate {
       bigBlock(s"""
           |import java.util.*;
           |import java.sql.*;
-          |import java.text.SimpleDateFormat;
           |import dataSource.dbcp2.DataSource;
           |import model.${structure.name.toPascal};\n
           |""")
@@ -60,10 +59,9 @@ generate {
           ln(s"""final String SQL_INSERT = "insert into ${structure.name}($sqlParam) values($sqlValues)";""")
 
           block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_INSERT))"){
-            ln(s"""SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
             structure.fields.foreach{f=>
               f.datatype match {
-                case d: DateDatatype => ln(s"String stringDateISO = df.format(${structure.name}.get${f.name.toPascal}());")
+                case d: DateDatatype => ln(s"String stringDateISO = dateFormat().format(${structure.name}.get${f.name.toPascal}());")
                 case _ => ""
               }
             }
@@ -89,10 +87,9 @@ generate {
           sqlParam = sqlParam + s"where id = ?"
           ln(s"""final String SQL_UPDATE = "update ${structure.name} set $sqlParam;";""")
           block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_UPDATE))"){
-            ln(s"""SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
             structure.fields.foreach{f=>
               f.datatype match { 
-                case d: DateDatatype => ln(s"String stringDateISO = df.format(${structure.name}.get${f.name.toPascal}());")
+                case d: DateDatatype => ln(s"String stringDateISO = dateFormat().format(${structure.name}.get${f.name.toPascal}());")
                 case _ => ""
               }
             }
@@ -121,14 +118,13 @@ generate {
           ln(s"""final String SQL_SELECT_ALL = "Select * from ${structure.name}";""")
           block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_ALL))"){
             ln(s"List<${structure.name.toPascal}> ${structure.name}List = new ArrayList<${structure.name.toPascal}>();")
-            ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
             ln(s"ResultSet rs = ps.executeQuery();")
             block(s"while (rs.next())"){
               ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
               structure.fields.foreach{f=>
                 f.datatype match {
                   case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                  case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(formatter.parse(rs.getString("${f.name}")));""")
+                  case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
                   case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                 }
               }
@@ -142,7 +138,6 @@ generate {
         block(s"public ${structure.name.toPascal} selectByKey($key) throws Throwable"){
           ln(s"""final String SQL_SELECT_BY_KEY = "Select * from ${structure.name} where id = ? ;";""")
           block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_KEY))"){
-            ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
             ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
             structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
               f.datatype match {
@@ -155,7 +150,7 @@ generate {
               structure.fields.foreach{f=>
                 f.datatype match {
                   case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                  case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(formatter.parse(rs.getString("${f.name}")));""")
+                  case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
                   case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                 }
               }
@@ -172,7 +167,6 @@ generate {
           block(s"public List<${structure.name.toPascal}> selectBy$fkeyName($fkey) throws Throwable"){
             ln(s"""final String SQL_SELECT_BY_ARTICLE_ID = "Select * from ${structure.name} where $fkeyforsql ;";""")
             block(s"try( Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_ARTICLE_ID))"){
-              ln(s"""SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");""")
               ln(s"List<${structure.name.toPascal}> ${structure.name}List = new ArrayList<${structure.name.toPascal}>();")
               structure.fields.filter(_.has('ref)).map(f=>f).foreach{f=>
                 ln(s"ps.setString(1, ${f.name.toCamel}.toString());")
@@ -183,7 +177,7 @@ generate {
                 structure.fields.foreach{f=>
                   f.datatype match {
                     case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                    case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(formatter.parse(rs.getString("${f.name}")));""")
+                    case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
                     case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                   }
                 }
@@ -201,15 +195,20 @@ generate {
       ln(s"package ${pkg};")
       bigBlock(s"""
           |import dataSource.dbcp2.DataSource;
+          |import java.text.SimpleDateFormat;
           |
           |public class BaseDao {
           |    protected DataSource ds;
-          |
+          |    
           |    protected BaseDao(DataSource ds) {
           |        if ( ds == null )
           |            throw new IllegalArgumentException("DataSource is not specified.");
           |       
           |        this.ds = ds;
+          |    }
+          |
+          |    protected SimpleDateFormat dateFormat() {
+          |        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
           |    }
           |}""")
     }
