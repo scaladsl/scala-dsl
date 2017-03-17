@@ -170,8 +170,8 @@ generate {
           var fkeyforsql = structure.fields.filter(_.has('ref)).map(f=> f.name + " = ?").mkString(", ")
           var fkeyName = structure.fields.filter(_.has('ref)).map(f=> f.name.toPascal).mkString(" ")
           block(s"public List<${structure.name.toPascal}> selectBy$fkeyName($fkey) throws Throwable"){
-            ln(s"""final String SQL_SELECT_BY_ARTICLE_ID = "Select * from ${structure.name} where $fkeyforsql ;";""")
-            block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_ARTICLE_ID))"){
+            ln(s"""final String SQL_SELECT_BY_${structure.name.toUpper}_ID = "Select * from ${structure.name} where $fkeyforsql ;";""")
+            block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_${structure.name.toUpper}_ID))"){
               ln(s"List<${structure.name.toPascal}> ${structure.name}List = new ArrayList<${structure.name.toPascal}>();")
               structure.fields.filter(_.has('ref)).map(f=>f).foreach{f=>
                 ln(s"ps.setString(1, ${f.name.toCamel}.toString());")

@@ -119,8 +119,6 @@ generate {
         |import java.util.UUID;
         |import javax.persistence.EntityNotFoundException;
         |import static spark.Spark.*;
-        |import spark.template.velocity.VelocityTemplateEngine;
-        |import spark.ModelAndView;
         |import com.google.gson.Gson;
         |import serviceImpl.*;
         |
@@ -148,10 +146,10 @@ generate {
                 ln(s"new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)});")
             }
             block(s"catch (EntityNotFoundException e)"){
-              ln(s"""halt(404, "Not Found");""")
+              ln(s"""halt(404, "{\\"message\\" : \\"not found\\"}");""")
             }
             block(s"catch (Throwable e)"){
-              ln(s"""halt(500, "Internal Server Error");""")
+              ln(s"""halt(500, "{\\"message\\" : \\"internal server error\\"}");""")
             }
             if(ftype(f) == "void")
               ln(s"""return "";""")

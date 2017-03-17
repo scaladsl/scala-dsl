@@ -28,6 +28,8 @@ def jtype(field: Field): String = {
 
 }
 
+def hasPrimaryKey(s: Structure): Boolean = s.fields.find(_.name == "id").isDefined
+
 generate {
   begin ALL { root =>
     options.blockStart = "{"
@@ -69,10 +71,12 @@ generate {
             structure.fields.foreach{f=>
               i += 1
               f.datatype match {
-                case u: UuidDatatype => ln(s"ps.setObject($i, ${structure.name}.get${f.name.toPascal}());")
-                case n: IntDatatype =>  ln(s"ps.setInt($i, ${structure.name}.get${f.name.toPascal}());")
-                case d: DateDatatype => ln(s"ps.setString($i, stringDateISO);")
-                case _ => ln(s"ps.setString($i, ${structure.name}.get${f.name.toPascal}());")
+                case s: StringDatatype => ln(s"ps.setString($i, ${structure.name}.get${f.name.toPascal}());")
+                case n: IntDatatype    => ln(s"ps.setInt($i, ${structure.name}.get${f.name.toPascal}());")
+                case f: FloatDatatype  => ln(s"ps.setDouble($i, ${structure.name}.get${f.name.toPascal}());")
+                case b: BoolDatatype   => ln(s"ps.setBoolean($i, ${structure.name}.get${f.name.toPascal}());")
+                case u: UuidDatatype   => ln(s"ps.setObject($i, ${structure.name}.get${f.name.toPascal}());")
+                case d: DateDatatype   => ln(s"ps.setString($i, stringDateISO);")
               }
             }
             ln(s"ps.executeUpdate();")
@@ -137,32 +141,33 @@ generate {
           }
         }
 
-        var key = structure.fields.filter(_.has('pkey)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
-        block(s"public ${structure.name.toPascal} selectByKey($key) throws Throwable"){
-          ln(s"""final String SQL_SELECT_BY_KEY = "Select * from ${structure.name} where id = ? ;";""")
-          block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_KEY))"){
-            ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
-            structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
-              f.datatype match {
-                case u: UuidDatatype => ln(s"ps.setObject(1, ${f.name.toCamel});")
-                case n: IntDatatype =>  ln(s"ps.setInt(1, ${structure.name}.get${f.name.toPascal}());")
-                case _=> ""
-              }
-            }
-            ln(s"ResultSet rs = ps.executeQuery();")
-            block(s"while (rs.next())"){
-              structure.fields.foreach{f=>
+        //var key = structure.fields.filter(_.has('pkey)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
+        if ( hasPrimaryKey(structure) ) {
+          block(s"public ${structure.name.toPascal} selectByKey(java.util.UUID id) throws Throwable"){
+            ln(s"""final String SQL_SELECT_BY_KEY = "Select * from ${structure.name} where id = ? ;";""")
+            block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_KEY))"){
+              ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
+              structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
                 f.datatype match {
-                  case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                  case i: IntDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
-                  case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
-                  case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
+                  case u: UuidDatatype => ln(s"ps.setObject(1, ${f.name.toCamel});")
+                  case n: IntDatatype =>  ln(s"ps.setInt(1, ${structure.name}.get${f.name.toPascal}());")
+                  case _=> ""
                 }
               }
-            }
-            ln(s"return ${structure.name};")
+              ln(s"ResultSet rs = ps.executeQuery();")
+              block(s"while (rs.next())"){
+                structure.fields.foreach{f=>
+                  f.datatype match {
+                    case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
+                    case i: IntDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
+                    case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
+                    case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
+                  }
+                }
+              }
+              ln(s"return ${structure.name};")
+            }   
           }
-          
         }
 
         if ( !structure.fields.filter(_.has('ref)).map(f=> f).isEmpty ) {
