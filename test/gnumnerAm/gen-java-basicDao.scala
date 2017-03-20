@@ -39,28 +39,27 @@ generate {
 
 
   begin STRUCTURE { structure =>
-    var pkg = "basicDao";
-    file(s"${pkg}/Basic${structure.name.toPascal}Dao.java") {
-      ln(s"package ${pkg};")
+    file(s"iunetworks/dataaccess/Basic${structure.name.toPascal}Dao.java") {
+      ln(s"package am.iunetworks.ppcm.api.dataaccess;")
       bigBlock(s"""
           |import java.util.*;
           |import java.sql.*;
-          |import database.dbcp2.*;
-          |import model.${structure.name.toPascal};\n
+          |import javax.sql.DataSource; 
+          |import am.iunetworks.ppcm.api.model.${structure.name.toPascal};\n
           |""")
              
       block(s"public class Basic${structure.name.toPascal}Dao extends BaseDao"){
 
-        block(s"protected Basic${structure.name.toPascal}Dao (Database database)"){
-          ln("super(database);")
+        block(s"protected Basic${structure.name.toPascal}Dao (DataSource  dataSource)"){
+          ln("super(dataSource);")
         }
 
-        block(s"public void insert(${structure.name.toPascal} ${structure.name}) throws Throwable") {
+        block(s"public void insert(${structure.name.toPascal} ${structure.name.toCamel}) throws Throwable") {
           var sqlParam = structure.fields.map(f=> s"${f.name}").mkString(", ")
           var sqlValues = structure.fields.map(f=> s"?").mkString(", ")
           ln(s"""final String SQL_INSERT = "insert into ${structure.name}($sqlParam) values($sqlValues)";""")
 
-          block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_INSERT))"){
+          block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_INSERT))"){
             structure.fields.foreach{f=>
               f.datatype match {
                 case d: DateDatatype => ln(s"String stringDateISO = dateFormat().format(${structure.name}.get${f.name.toPascal}());")
@@ -71,11 +70,11 @@ generate {
             structure.fields.foreach{f=>
               i += 1
               f.datatype match {
-                case s: StringDatatype => ln(s"ps.setString($i, ${structure.name}.get${f.name.toPascal}());")
-                case n: IntDatatype    => ln(s"ps.setInt($i, ${structure.name}.get${f.name.toPascal}());")
-                case f: FloatDatatype  => ln(s"ps.setDouble($i, ${structure.name}.get${f.name.toPascal}());")
-                case b: BoolDatatype   => ln(s"ps.setBoolean($i, ${structure.name}.get${f.name.toPascal}());")
-                case u: UuidDatatype   => ln(s"ps.setObject($i, ${structure.name}.get${f.name.toPascal}());")
+                case s: StringDatatype => ln(s"ps.setString($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
+                case n: IntDatatype    => ln(s"ps.setInt($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
+                case f: FloatDatatype  => ln(s"ps.setDouble($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
+                case b: BoolDatatype   => ln(s"ps.setBoolean($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
+                case u: UuidDatatype   => ln(s"ps.setObject($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
                 case d: DateDatatype   => ln(s"ps.setString($i, stringDateISO);")
               }
             }
@@ -83,15 +82,15 @@ generate {
           }
         }
 
-        block(s"public void update(${structure.name.toPascal} ${structure.name}) throws Throwable") {
+        block(s"public void update(${structure.name.toPascal} ${structure.name.toCamel}) throws Throwable") {
           var sqlParam = ""
-          var filtredFildsPkey = structure.fields.filter(_.has('pkey) == false).map(_.name.toCamel)
+          var filtredFildsPkey = structure.fields.filter(_.has('pkey) == false).map(_.name)
           filtredFildsPkey.foreach{ f =>
               sqlParam += s"${f} = ?, "
             }
           sqlParam = sqlParam + s"where id = ?"
           ln(s"""final String SQL_UPDATE = "update ${structure.name} set $sqlParam;";""")
-          block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_UPDATE))"){
+          block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_UPDATE))"){
             structure.fields.foreach{f=>
               f.datatype match { 
                 case d: DateDatatype => ln(s"String stringDateISO = dateFormat().format(${structure.name}.get${f.name.toPascal}());")
@@ -102,10 +101,10 @@ generate {
             structure.fields.foreach{f=>
               i += 1
               f.datatype match {
-                case u: UuidDatatype => ln(s"ps.setObject($i, ${structure.name}.get${f.name.toPascal}());")
-                case n: IntDatatype =>  ln(s"ps.setInt($i, ${structure.name}.get${f.name.toPascal}());")
+                case u: UuidDatatype => ln(s"ps.setObject($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
+                case n: IntDatatype =>  ln(s"ps.setInt($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
                 case d: DateDatatype => ln(s"ps.setString($i, stringDateISO);")
-                case _ => ln(s"ps.setString($i, ${structure.name}.get${f.name.toPascal}());")
+                case _ => ln(s"ps.setString($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
               }
             }
             ln(s"ps.executeUpdate();")
@@ -114,7 +113,7 @@ generate {
 
         block(s"public void remove(UUID id) throws Throwable"){
           ln(s"""final String SQL_DELETE = "delete from ${structure.name} where id =?;";""")
-          block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_DELETE))"){
+          block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_DELETE))"){
             ln(s"ps.setObject(1, id);")
             ln(s"ps.executeUpdate();")
           }
@@ -122,22 +121,22 @@ generate {
 
         block(s"public List<${structure.name.toPascal}> selectAll() throws Throwable"){
           ln(s"""final String SQL_SELECT_ALL = "Select * from ${structure.name}";""")
-          block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_ALL))"){
-            ln(s"List<${structure.name.toPascal}> ${structure.name}List = new ArrayList<${structure.name.toPascal}>();")
+          block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_ALL))"){
+            ln(s"List<${structure.name.toPascal}> ${structure.name.toCamel}List = new ArrayList<${structure.name.toPascal}>();")
             ln(s"ResultSet rs = ps.executeQuery();")
             block(s"while (rs.next())"){
-              ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
+              ln(s"${structure.name.toPascal} ${structure.name.toCamel} = new ${structure.name.toPascal}();")
               structure.fields.foreach{f=>
                 f.datatype match {
-                  case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                  case i: IntDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
-                  case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
-                  case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
+                  case u: UuidDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
+                  case i: IntDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
+                  case d: DateDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
+                  case _ => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                 }
               }
-              ln(s"${structure.name}List.add(${structure.name});")
+              ln(s"${structure.name.toCamel}List.add(${structure.name.toCamel});")
             }
-            ln(s"return ${structure.name}List;")
+            ln(s"return ${structure.name.toCamel}List;")
           }
         }
 
@@ -145,8 +144,8 @@ generate {
         if ( hasPrimaryKey(structure) ) {
           block(s"public ${structure.name.toPascal} selectByKey(java.util.UUID id) throws Throwable"){
             ln(s"""final String SQL_SELECT_BY_KEY = "Select * from ${structure.name} where id = ? ;";""")
-            block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_KEY))"){
-              ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
+            block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_KEY))"){
+              ln(s"${structure.name.toPascal} ${structure.name.toCamel} = new ${structure.name.toPascal}();")
               structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
                 f.datatype match {
                   case u: UuidDatatype => ln(s"ps.setObject(1, ${f.name.toCamel});")
@@ -158,14 +157,14 @@ generate {
               block(s"while (rs.next())"){
                 structure.fields.foreach{f=>
                   f.datatype match {
-                    case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                    case i: IntDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
-                    case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
-                    case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
+                    case u: UuidDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
+                    case i: IntDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
+                    case d: DateDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
+                    case _ => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                   }
                 }
               }
-              ln(s"return ${structure.name};")
+              ln(s"return ${structure.name.toCamel};")
             }   
           }
         }
@@ -176,7 +175,7 @@ generate {
           var fkeyName = structure.fields.filter(_.has('ref)).map(f=> f.name.toPascal).mkString(" ")
           block(s"public List<${structure.name.toPascal}> selectBy$fkeyName($fkey) throws Throwable"){
             ln(s"""final String SQL_SELECT_BY_${structure.name.toUpper}_ID = "Select * from ${structure.name} where $fkeyforsql ;";""")
-            block(s"try( Connection con = database.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_${structure.name.toUpper}_ID))"){
+            block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_${structure.name.toUpper}_ID))"){
               ln(s"List<${structure.name.toPascal}> ${structure.name}List = new ArrayList<${structure.name.toPascal}>();")
               structure.fields.filter(_.has('ref)).map(f=>f).foreach{f=>
                 ln(s"ps.setString(1, ${f.name.toCamel}.toString());")
@@ -186,10 +185,10 @@ generate {
                 ln(s"${structure.name.toPascal} ${structure.name} = new ${structure.name.toPascal}();")
                 structure.fields.foreach{f=>
                   f.datatype match {
-                    case u: UuidDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                    case i: IntDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
-                    case d: DateDatatype => ln(s"""${structure.name}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
-                    case _ => ln(s"""${structure.name}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
+                    case u: UuidDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
+                    case i: IntDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
+                    case d: DateDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
+                    case _ => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                   }
                 }
                 ln(s"${structure.name}List.add(${structure.name});")
@@ -202,24 +201,18 @@ generate {
       }
     }
 
-    file(s"${pkg}/BaseDao.java") {
-      ln(s"package ${pkg};")
+    file(s"iunetworks/dataaccess/BaseDao.java") {
+      ln(s"package am.iunetworks.ppcm.api.dataaccess;")
       bigBlock(s"""
-          |import database.dbcp2.*;
-          |import java.text.SimpleDateFormat;
+          |import javax.sql.DataSource;
           |
           |public class BaseDao {
-          |    protected Database database;
+          |    protected DataSource dataSource;
           |    
-          |    protected BaseDao(Database database) {
-          |        if ( database == null )
+          |    protected BaseDao(DataSource  dataSource) {
+          |       if ( dataSource == null )
           |            throw new IllegalArgumentException("Database is not specified.");
-          |       
-          |        this.database = database ;
-          |    }
-          |
-          |    protected SimpleDateFormat dateFormat() {
-          |        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+          |       this.dataSource = dataSource;
           |    }
           |}""")
     }

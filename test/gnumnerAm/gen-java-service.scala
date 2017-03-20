@@ -12,7 +12,7 @@ def urlArgType(urlArg: UrlArgument): String = {
       if(urlArg.datatype != null && urlArg.datatype.isInstanceOf[Structure]){
         var list = urlArg("datatype").split("::")
         list = list.take(list.length -1) :+ urlArg.datatype.name.toPascal
-        list.mkString(".")
+         "am.iunetworks.ppcm.api."+list.mkString(".")
       }
       else
         throw new IllegalArgumentException(s"Invalid datatype: ${urlArg("datatype")}")
@@ -41,7 +41,7 @@ def ftype(function: Function): String = {
       if(function.datatype != null && function.datatype.isInstanceOf[Structure]){
         var list = function("return-datatype").split("::")
         list = list.take(list.length -1) :+ function.datatype.name.toPascal
-        list.mkString(".")
+         "am.iunetworks.ppcm.api."+list.mkString(".")
       }
       else
         throw new IllegalArgumentException(s"Invalid datatype: ${function.datatype}")
@@ -68,7 +68,7 @@ def jtype(field: Field): String = {
       if(field.datatype != null && field.datatype.isInstanceOf[Structure]){
         var list = field("datatype").split("::")
         list = list.take(list.length -1) :+ field.datatype.name.toPascal
-        list.mkString(".")
+        "am.iunetworks.ppcm.api."+list.mkString(".")
       }
       else
         throw new IllegalArgumentException(s"Invalid datatype: {field.datatype}")
@@ -83,6 +83,7 @@ def jtype(field: Field): String = {
 
 }
 
+
 generate {
 
   begin ALL { root =>
@@ -92,9 +93,8 @@ generate {
   }
 
   begin SERVICE { service =>
-    var pkg = "service";
-    file(s"${pkg}/${service.name.toPascal}.java") {
-      ln(s"package ${pkg};\n")
+    file(s"iunetworks/service/${service.name.toPascal}.java") {
+      ln(s"package am.iunetworks.ppcm.api.service;\n")
       block(s"public interface ${service.name.toPascal}") {
         service.functions.foreach {f =>
           ln(s"public ${ftype(f)} ${f.name.toCamel}(${functionParams(f)}) throws java.lang.Throwable;")

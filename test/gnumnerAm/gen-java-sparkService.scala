@@ -41,7 +41,7 @@ def functionParams(f: Function): String = {
   }
 
   f.fields.foreach{f =>
-    params = params ::: List(s"""new Gson().fromJson(req.body(), ${f.path}.${f.datatype.name.toPascal}.class)""")
+    params = params ::: List(s"""new Gson().fromJson(req.body(), am.iunetworks.ppcm.api.${f.path}.${f.datatype.name.toPascal}.class)""")
   }
   params.mkString(", ")
 }
@@ -110,21 +110,20 @@ generate {
     options.currentDir = config.output
   }
 
-  begin SERVICE { service =>
-    var pkg = "sparkServices";
-    file(s"${pkg}/Spark${service.name.toPascal}.java") {
+  begin SERVICE { service =>;
+    file(s"iunetworks/spark/${service.name.toPascal}.java") {
 
-      bigBlock(s"""package ${pkg};
+      bigBlock(s"""package am.iunetworks.ppcm.api.spark;
         |
         |import java.util.UUID;
         |import javax.persistence.EntityNotFoundException;
         |import static spark.Spark.*;
         |import com.google.gson.Gson;
-        |import serviceImpl.*;
+        |import am.iunetworks.ppcm.api.service.*;
         |
         |""")
 
-      block(s"public final class Spark${service.name.toPascal}") {
+      block(s"public final class ${service.name.toPascal}") {
 
         block(s"""public static void register()"""){
 

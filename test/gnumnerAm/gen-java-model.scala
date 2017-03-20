@@ -47,8 +47,8 @@ generate {
 
   begin STRUCTURE { structure =>
 
-    file(s"${structure.path}/${structure.name.toPascal}.java") {
-      ln(s"package ${structure.path};")
+    file(s"iunetworks/${structure.path}/${structure.name.toPascal}.java") {
+      ln(s"package am.iunetworks.ppcm.api.${structure.path};")
       comment(structure)
       block(s"public class ${structure.name.toPascal}") {
         structure.fields.foreach { f =>

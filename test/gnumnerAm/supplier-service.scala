@@ -28,7 +28,7 @@
     //
     // The service designed to operate with suppliers.
     //
-    'supplier_service ::= service(s"/api/suppliers") {
+    'supplier_api ::= service(s"/api/suppliers") {
 
       //
       // Retrieves the supplier associated with the specified identity.
