@@ -93,9 +93,9 @@ generate {
   }
 
   begin SERVICE { service =>
-    file(s"iunetworks/service/${service.name.toPascal}.java") {
+    file(s"iunetworks/service/${service.name.toPascal}Service.java") {
       ln(s"package am.iunetworks.ppcm.api.service;\n")
-      block(s"public interface ${service.name.toPascal}") {
+      block(s"public interface ${service.name.toPascal}Service") {
         service.functions.foreach {f =>
           ln(s"public ${ftype(f)} ${f.name.toCamel}(${functionParams(f)}) throws java.lang.Throwable;")
         }

@@ -51,18 +51,22 @@ generate {
       block(s"public class Basic${structure.name.toPascal}Dao extends BaseDao"){
 
         block(s"protected Basic${structure.name.toPascal}Dao (DataSource  dataSource)"){
-          ln("super(dataSource);")
+          ln(s"super(dataSource, org.slf4j.LoggerFactory.getLogger(Basic${structure.name.toPascal}Dao.class));")
         }
 
         block(s"public void insert(${structure.name.toPascal} ${structure.name.toCamel}) throws Throwable") {
           var sqlParam = structure.fields.map(f=> s"${f.name}").mkString(", ")
           var sqlValues = structure.fields.map(f=> s"?").mkString(", ")
-          ln(s"""final String SQL_INSERT = "insert into ${structure.name}($sqlParam) values($sqlValues)";""")
+          ln(s"""final String SQL_INSERT = "insert into ${structure.name.toCamel}($sqlParam) values($sqlValues)";""")
+
+          var args = for(f <- structure.fields) yield s"${structure.name.toCamel}.get${f.name.toPascal}()"
+          ln(s"""Object[] fields = {${args.mkString(", ")}};""")
+          ln(s"""logger.info( sqlStatement(SQL_INSERT, fields) );""")
 
           block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_INSERT))"){
             structure.fields.foreach{f=>
               f.datatype match {
-                case d: DateDatatype => ln(s"String stringDateISO = dateFormat().format(${structure.name}.get${f.name.toPascal}());")
+                case d: DateDatatype => ln(s"String stringDateISO = dateFormat().format(${structure.name.toCamel}.get${f.name.toPascal}());")
                 case _ => ""
               }
             }
@@ -90,6 +94,11 @@ generate {
             }
           sqlParam = sqlParam + s"where id = ?"
           ln(s"""final String SQL_UPDATE = "update ${structure.name} set $sqlParam;";""")
+
+          var args = for(f <- structure.fields) yield s"${structure.name.toCamel}.get${f.name.toPascal}()"
+          ln(s"""Object[] fields = {${args.mkString(", ")}};""")
+          ln(s"""logger.info( sqlStatement(SQL_UPDATE, fields) );""")
+
           block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_UPDATE))"){
             structure.fields.foreach{f=>
               f.datatype match { 
@@ -104,6 +113,7 @@ generate {
                 case u: UuidDatatype => ln(s"ps.setObject($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
                 case n: IntDatatype =>  ln(s"ps.setInt($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
                 case d: DateDatatype => ln(s"ps.setString($i, stringDateISO);")
+                case b: BoolDatatype   => ln(s"ps.setBoolean($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
                 case _ => ln(s"ps.setString($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
               }
             }
@@ -113,6 +123,7 @@ generate {
 
         block(s"public void remove(UUID id) throws Throwable"){
           ln(s"""final String SQL_DELETE = "delete from ${structure.name} where id =?;";""")
+          ln(s"""logger.info("delete from supplier where id = " + id + ")");""")
           block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_DELETE))"){
             ln(s"ps.setObject(1, id);")
             ln(s"ps.executeUpdate();")
@@ -121,6 +132,7 @@ generate {
 
         block(s"public List<${structure.name.toPascal}> selectAll() throws Throwable"){
           ln(s"""final String SQL_SELECT_ALL = "Select * from ${structure.name}";""")
+          ln(s"""logger.info(SQL_SELECT_ALL);""")
           block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_ALL))"){
             ln(s"List<${structure.name.toPascal}> ${structure.name.toCamel}List = new ArrayList<${structure.name.toPascal}>();")
             ln(s"ResultSet rs = ps.executeQuery();")
@@ -131,6 +143,7 @@ generate {
                   case u: UuidDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
                   case i: IntDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
                   case d: DateDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
+                  case b: BoolDatatype   =>  ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getBoolean("${f.name}"));""")
                   case _ => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                 }
               }
@@ -144,6 +157,7 @@ generate {
         if ( hasPrimaryKey(structure) ) {
           block(s"public ${structure.name.toPascal} selectByKey(java.util.UUID id) throws Throwable"){
             ln(s"""final String SQL_SELECT_BY_KEY = "Select * from ${structure.name} where id = ? ;";""")
+            ln(s"""logger.info("Select * from supplier where id = " + id + ";");""")
             block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_KEY))"){
               ln(s"${structure.name.toPascal} ${structure.name.toCamel} = new ${structure.name.toPascal}();")
               structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
@@ -160,6 +174,7 @@ generate {
                     case u: UuidDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
                     case i: IntDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
                     case d: DateDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
+                    case b: BoolDatatype   => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getBoolean("${f.name}"));""")
                     case _ => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                   }
                 }
@@ -168,7 +183,7 @@ generate {
             }   
           }
         }
-
+        ////TODO LOGGER
         if ( !structure.fields.filter(_.has('ref)).map(f=> f).isEmpty ) {
           var fkey = structure.fields.filter(_.has('ref)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
           var fkeyforsql = structure.fields.filter(_.has('ref)).map(f=> f.name + " = ?").mkString(", ")
@@ -188,6 +203,7 @@ generate {
                     case u: UuidDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
                     case i: IntDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
                     case d: DateDatatype => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
+                    case b: BoolDatatype   => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getBoolean("${f.name}"));""")
                     case _ => ln(s"""${structure.name.toCamel}.set${f.name.toPascal}(rs.getString("${f.name}"));""")
                   }
                 }
@@ -205,14 +221,24 @@ generate {
       ln(s"package am.iunetworks.ppcm.api.dataaccess;")
       bigBlock(s"""
           |import javax.sql.DataSource;
+          |import org.slf4j.Logger;
+          |import org.slf4j.LoggerFactory;
           |
           |public class BaseDao {
           |    protected DataSource dataSource;
-          |    
-          |    protected BaseDao(DataSource  dataSource) {
+          |    protected Logger logger; 
+          |
+          |    protected BaseDao(DataSource  dataSource, Logger logger) {
           |       if ( dataSource == null )
           |            throw new IllegalArgumentException("Database is not specified.");
           |       this.dataSource = dataSource;
+          |       this.logger = logger;
+          |    }
+          |
+          |    protected String sqlStatement(String sql, Object[] args){
+          |       for(Object a: args) 
+          |         sql = sql.replaceFirst("\\\\?", a.toString());
+          |       return sql;
           |    }
           |}""")
     }

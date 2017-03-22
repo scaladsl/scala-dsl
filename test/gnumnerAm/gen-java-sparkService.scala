@@ -102,6 +102,21 @@ def jtype(field: Field): String = {
 
 }
 
+def loggerData(service: Service, f: Function): String = {
+  var result = s""""${f.method}: ${service.serviceUrl}""""
+  var list = List[String]()
+  f.url.split("/").map { case s =>
+    f.urlArgs.foreach { urlarg =>
+      if(urlarg.name == s)
+        list = list ::: List(s""" + req.params(":$s")""")
+    }
+    if(!list.contains(s""" + req.params(":$s")"""))
+      list = list ::: List(s)
+  }
+  result + list.mkString("""+"/"""")
+}
+
+ 
 generate {
 
   begin ALL { root =>
@@ -111,7 +126,7 @@ generate {
   }
 
   begin SERVICE { service =>;
-    file(s"iunetworks/spark/${service.name.toPascal}.java") {
+    file(s"iunetworks/spark/${service.name.toPascal}Api.java") {
 
       bigBlock(s"""package am.iunetworks.ppcm.api.spark;
         |
@@ -120,24 +135,26 @@ generate {
         |import static spark.Spark.*;
         |import com.google.gson.Gson;
         |import am.iunetworks.ppcm.api.service.*;
-        |
+        |import org.slf4j.*;
         |""")
 
-      block(s"public final class ${service.name.toPascal}") {
+      block(s"public final class ${service.name.toPascal}Api") {
 
         block(s"""public static void register()"""){
-
+          ln(s"""final Logger logger = LoggerFactory.getLogger(${service.name.toPascal}Api.class);\n""")
           service.functions.foreach { f =>
             ln(s"""${f.method}("${service.serviceUrl}${functionUrl(f)}", (req, res) -> {""")
+            ln(s"""logger.info(${loggerData(service, f)});""")
+
             if(ftype(f) != "void")
               ln(s"""String jsonInString = "";""")
             block(s"try"){
               if(ftype(f) != "void"){
                 f.modifier match {
                   case "required" =>
-                    ln(s"jsonInString = new Gson().toJson(new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)}));")
+                    ln(s"jsonInString = new Gson().toJson(new ${service.name.toPascal}ServiceImpl().${f.name.toCamel}(${functionParams(f)}));")
                   case "repeated" =>
-                    ln(s"jsonInString = new Gson().toJson(new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)}));")
+                    ln(s"jsonInString = new Gson().toJson(new ${service.name.toPascal}ServiceImpl().${f.name.toCamel}(${functionParams(f)}));")
                   case _ => ""
                 }
               }
@@ -161,3 +178,5 @@ generate {
     }
   }
 }
+
+

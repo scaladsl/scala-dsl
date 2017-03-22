@@ -78,7 +78,7 @@ object CDSL {
 
   object AST {
     val root = createRoot()
-    private val context = Stack[Node](root)
+    val context = Stack[Node](root)
 
     def resolve(name: String): Node = {
       var path = name.split("::").toList
@@ -217,7 +217,9 @@ object CDSL {
     def ::=(tag: EntityTag): Unit = {
       if(name.contains("::")){
         val namespaces = name.split("::")
-        for( i <- 0 to namespaces.size -2 ){ AST.push(Node(namespaces(i), "namespace", AST.current))}
+        for( i <- 0 to namespaces.size -2 ){
+          AST.push(Node(namespaces(i), "namespace", AST.current))
+        }
         tag.node.name = namespaces.last
         tag.node.parent = AST.current
         AST.push(tag.node)
@@ -229,6 +231,36 @@ object CDSL {
         AST.push(tag.node)
         tag.block
         AST.pop()
+        /*
+         AST.current.find(name) match {
+         case Some(child) => {
+         println("\n\n\n===============")
+         println("Current: " + AST.current.name)
+         val tempNode = AST.current;
+         AST.context.top = child
+         tag.block
+         AST.context.top = tempNode
+         
+         AST.pop
+         AST.push(child)
+         println("Child -> Current : " + AST.current.name)
+         tag.block
+         AST.pop
+         AST.push(tempNode)
+         println("End: " + AST.current.name)
+         println("===============\n\n\n")
+         //tag.node.children.foreach (node => child.append( node ))
+         //AST.current.children.foreach(println)
+         
+         }
+         case None => {
+         tag.node.name = name
+         AST.push(tag.node)
+         tag.block
+         AST.pop()
+         }
+         */
+        }
       }
     }
 
