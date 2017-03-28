@@ -135,13 +135,14 @@ generate {
         |import static spark.Spark.*;
         |import com.google.gson.Gson;
         |import am.iunetworks.ppcm.api.service.*;
-        |import org.slf4j.*;
+        |import org.apache.log4j.Logger;
+        |
         |""")
 
       block(s"public final class ${service.name.toPascal}Api") {
 
         block(s"""public static void register()"""){
-          ln(s"""final Logger logger = LoggerFactory.getLogger(${service.name.toPascal}Api.class);\n""")
+          ln(s"""final Logger logger = Logger.getLogger(${service.name.toPascal}Api.class);\n""")
           service.functions.foreach { f =>
             ln(s"""${f.method}("${service.serviceUrl}${functionUrl(f)}", (req, res) -> {""")
             ln(s"""logger.info(${loggerData(service, f)});""")

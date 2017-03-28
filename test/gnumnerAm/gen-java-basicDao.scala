@@ -46,12 +46,14 @@ generate {
           |import java.sql.*;
           |import javax.sql.DataSource; 
           |import am.iunetworks.ppcm.api.model.${structure.name.toPascal};\n
+          |import org.apache.log4j.Logger;
+          |
           |""")
              
       block(s"public class Basic${structure.name.toPascal}Dao extends BaseDao"){
 
         block(s"protected Basic${structure.name.toPascal}Dao (DataSource  dataSource)"){
-          ln(s"super(dataSource, org.slf4j.LoggerFactory.getLogger(Basic${structure.name.toPascal}Dao.class));")
+          ln(s"super(dataSource, Logger.getLogger(Basic${structure.name.toPascal}Dao.class));")
         }
 
         block(s"public void insert(${structure.name.toPascal} ${structure.name.toCamel}) throws Throwable") {
@@ -221,8 +223,7 @@ generate {
       ln(s"package am.iunetworks.ppcm.api.dataaccess;")
       bigBlock(s"""
           |import javax.sql.DataSource;
-          |import org.slf4j.Logger;
-          |import org.slf4j.LoggerFactory;
+          |import org.apache.log4j.Logger;
           |
           |public class BaseDao {
           |    protected DataSource dataSource;
