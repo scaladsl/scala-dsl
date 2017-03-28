@@ -4,11 +4,11 @@ def jtype(field: Field): String = {
 
   val baseType = field.datatype match {
     case s: StringDatatype => "java.lang.String"
-    case i: IntDatatype => "java.lang.Integer"
-    case f: FloatDatatype => "java.lang.Double"
-    case b: BoolDatatype => "java.lang.Boolean"
-    case u: UuidDatatype => "java.util.UUID"
-    case d: DateDatatype => "java.util.Date"
+    case i: IntDatatype    => "java.lang.Integer"
+    case f: FloatDatatype  => "java.lang.Double"
+    case b: BoolDatatype   => "java.lang.Boolean"
+    case u: UuidDatatype   => "java.util.UUID"
+    case d: DateDatatype   => "java.util.Date"
     case _ => field.datatype
       if(field.datatype != null && field.datatype.isInstanceOf[Structure]){
         var list = field("datatype").split("::")
@@ -16,21 +16,29 @@ def jtype(field: Field): String = {
         list.mkString(".")
       }
       else
-        throw new IllegalArgumentException(s"Invalid datatype: ${field.datatype}")
+        throw new IllegalArgumentException(s"Invalid datatype: {field.datatype}")
   }
 
   field.modifier match {
     case "required" => baseType
     case "optional" => s"java.util.Option<$baseType>"
-    case "repeated" => s"java.collection.List<$baseType>"
+    case "repeated" => s"java.util.List<$baseType>"
     case x => throw new IllegalArgumentException(s"Invalid modifier: $x")
   }
-
 }
 
-def comment(e: Entity): Unit = { if(e.comment != "") ln(s"/** ${e.comment} */") }
+def comment(e: Entity, s: String = ""): Unit = {
+  var c = e.comment
+  ln("")
+  if(c != "")
+    s match {
+      case "" => ln(s"/** $c */") 
+      case _  => ln(s"/** $s ${c.trim.toCamel} */")
+    }
+}
 
 generate {
+
   begin ALL { root =>
     options.blockStart = "{"
     options.blockEnd = "}"
@@ -39,28 +47,25 @@ generate {
 
   begin STRUCTURE { structure =>
 
-    file(s"${structure.name.toPascal}.java") {
+    file(s"${structure.path}/${structure.name.toPascal}.java") {
       ln(s"package ${structure.path};")
       comment(structure)
       block(s"public class ${structure.name.toPascal}") {
         structure.fields.foreach { f =>
           comment(f)
-          ln(s"public ${jtype(f)} ${f.name.toCamel};")
+          ln(s"private ${jtype(f)} ${f.name.toCamel};")
         }
-        ln(s"""public ${structure.name.toPascal}() {}""")
-        var consParam = structure.fields.map(f=> s"${jtype(f)} ${f.name.toCamel}").mkString(", ")
-        block(s"""public ${structure.name.toPascal}($consParam) """){
-          structure.fields.foreach{f=>
+        structure.fields.foreach { f =>
+          comment(f, "Gets")
+          block(s"public ${jtype(f)} get${f.name.toPascal}()"){
+            ln(s"return this.${f.name.toCamel};")
+          }
+          comment(f, "Sets")
+          block(s"public void set${f.name.toPascal}( ${jtype(f)} ${f.name.toCamel})"){
             ln(s"this.${f.name.toCamel} = ${f.name.toCamel};")
           }
         }
-        block(s"public String toString()") {
-          var str = structure.fields.map(f => s""" \"${f.name}: '\" + this.${f.name.toCamel}""").mkString("\"'\" +")
-          ln(s"return ${str};")
-        }
       }
     }
-
   }
-
 }

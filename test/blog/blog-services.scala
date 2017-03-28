@@ -4,7 +4,7 @@
   'article ::= struct {
 
     // Article identity
-    'id required 'uuid
+    'id required 'uuid ('pkey -> true)
 
     // Article title
     'title required 'string
@@ -70,7 +70,7 @@
     //
     // Updates the existing article.
     //
-    'save ::= put(s"/${'id as 'uuid}") {
+    'update ::= put(s"/${'id as 'uuid}") {
       'article required 'model::'article
     }
 
@@ -89,7 +89,7 @@
     //
     // Retrieves all the comments associated with the specified article.
     //
-    'retrieve_by_article ::= get(s"/${'article_id as 'uuid}/comments") {
+    'retrieve_by_article_id ::= get(s"/${'article_id as 'uuid}/comments") {
       returns repeated 'model::'comment
     }
 
@@ -103,7 +103,7 @@
     //
     // Updates the existing comment.
     //
-    'save ::= put(s"/${'article_id as 'uuid}/comments/${'id as 'uuid}") {
+    'update ::= put(s"/${'article_id as 'uuid}/comments/${'id as 'uuid}") {
       'comment required 'model::'comment
     }
 

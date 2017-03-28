@@ -41,7 +41,7 @@ def functionParams(f: Function): String = {
   }
 
   f.fields.foreach{f =>
-    params = params ::: List(s"""${f.name.toPascal}FromJson.get${f.name.toPascal}(req.body())""")
+    params = params ::: List(s"""new Gson().fromJson(req.body(), am.iunetworks.ppcm.api.${f.path}.${f.datatype.name.toPascal}.class)""")
   }
   params.mkString(", ")
 }
@@ -102,6 +102,21 @@ def jtype(field: Field): String = {
 
 }
 
+def loggerData(service: Service, f: Function): String = {
+  var result = s""""${f.method}: ${service.serviceUrl}""""
+  var list = List[String]()
+  f.url.split("/").map { case s =>
+    f.urlArgs.foreach { urlarg =>
+      if(urlarg.name == s)
+        list = list ::: List(s""" + req.params(":$s")""")
+    }
+    if(!list.contains(s""" + req.params(":$s")"""))
+      list = list ::: List(s)
+  }
+  result + list.mkString("""+"/"""")
+}
+
+ 
 generate {
 
   begin ALL { root =>
@@ -110,38 +125,37 @@ generate {
     options.currentDir = config.output
   }
 
-  begin SERVICE { service =>
+  begin SERVICE { service =>;
+    file(s"iunetworks/spark/${service.name.toPascal}Api.java") {
 
-    file(s"Spark${service.name.toPascal}.java") {
-
-      bigBlock(s"""import static spark.Spark.*;
-        |import spark.template.velocity.VelocityTemplateEngine;
-        |import spark.ModelAndView;
-        |import java.lang.Throwable;
-        |import java.util.*;
+      bigBlock(s"""package am.iunetworks.ppcm.api.spark;
+        |
+        |import java.util.UUID;
         |import javax.persistence.EntityNotFoundException;
+        |import static spark.Spark.*;
         |import com.google.gson.Gson;
-        |import model.*;
+        |import am.iunetworks.ppcm.api.service.*;
+        |import org.apache.log4j.Logger;
         |
         |""")
 
-      block(s"public class Spark${service.name.toPascal}") {
+      block(s"public final class ${service.name.toPascal}Api") {
 
-        block(s"""public void include${service.name.toPascal}()"""){
+        block(s"""public static void register()"""){
+          ln(s"""final Logger logger = Logger.getLogger(${service.name.toPascal}Api.class);\n""")
           service.functions.foreach { f =>
-
             ln(s"""${f.method}("${service.serviceUrl}${functionUrl(f)}", (req, res) -> {""")
+            ln(s"""logger.info(${loggerData(service, f)});""")
+
             if(ftype(f) != "void")
               ln(s"""String jsonInString = "";""")
             block(s"try"){
               if(ftype(f) != "void"){
                 f.modifier match {
                   case "required" =>
-                    ln(s"${ftype(f)} ${service.name.toCamel} = new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)});")
-                    ln(s"jsonInString = new Gson().toJson(${service.name.toCamel});")
+                    ln(s"jsonInString = new Gson().toJson(new ${service.name.toPascal}ServiceImpl().${f.name.toCamel}(${functionParams(f)}));")
                   case "repeated" =>
-                    ln(s"${ftype(f)} ${service.name.toCamel}List = new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)});")
-                    ln(s"jsonInString = new Gson().toJson(${service.name.toCamel}List);")
+                    ln(s"jsonInString = new Gson().toJson(new ${service.name.toPascal}ServiceImpl().${f.name.toCamel}(${functionParams(f)}));")
                   case _ => ""
                 }
               }
@@ -149,20 +163,21 @@ generate {
                 ln(s"new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)});")
             }
             block(s"catch (EntityNotFoundException e)"){
-              ln(s"""halt(404, "Not Found");""")
+              ln(s"""halt(404, "{\\"message\\" : \\"not found\\"}");""")
             }
             block(s"catch (Throwable e)"){
-              ln(s"""halt(500, "Internal Server Error");""")
+              ln(s"""halt(500, "{\\"message\\" : \\"internal server error\\"}");""")
             }
             if(ftype(f) == "void")
               ln(s"""return "";""")
             else
               ln(s"return jsonInString;")
-            ln(s"});")
+            ln(s"});\n")
           }
         }
       }
     }
   }
-
 }
+
+

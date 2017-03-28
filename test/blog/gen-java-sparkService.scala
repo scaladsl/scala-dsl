@@ -1,5 +1,18 @@
 import dslg.gdsl._
 
+def functionUrl(f: Function): String = {
+  var list = List[String]()
+  f.url.split("/").map { case s =>
+    f.urlArgs.foreach { urlarg =>
+      if(urlarg.name == s)
+        list = list ::: List(":" + s)
+    }
+    if(!list.contains(":" + s))
+      list = list ::: List(s)
+  }
+  list.mkString("/")
+}
+
 def urlArgType(urlArg: UrlArgument): String = {
   val baseType = urlArg.datatype match {
     case s: StringDatatype => "java.lang.String"
@@ -22,8 +35,14 @@ def urlArgType(urlArg: UrlArgument): String = {
 
 def functionParams(f: Function): String = {
   var params = List[String]()
-  f.urlArgs.foreach{arg => params = params ::: List(urlArgType(arg) + " " + arg.name.toCamel) }
-  f.fields.foreach{f => params = params ::: List(jtype(f) + " " + f.name.toCamel) }
+
+  f.urlArgs.foreach { f =>
+    params = params ::: List( s"""UUID.fromString(req.params(":""" + f.name + """"))""")
+  }
+
+  f.fields.foreach{f =>
+    params = params ::: List(s"""new Gson().fromJson(req.body(), ${f.path}.${f.datatype.name.toPascal}.class)""")
+  }
   params.mkString(", ")
 }
 
@@ -92,15 +111,54 @@ generate {
   }
 
   begin SERVICE { service =>
+    var pkg = "sparkServices";
+    file(s"${pkg}/Spark${service.name.toPascal}.java") {
 
-    file(s"${service.name.toPascal}.java") {
-      ln(s"package ${service.path};")
-      block(s"public interface ${service.name.toPascal}") {
-        service.functions.foreach {f =>
-          ln(s"public ${ftype(f)} ${f.name.toCamel}(${functionParams(f)}) throws java.lang.Throwable;")
+      bigBlock(s"""package ${pkg};
+        |
+        |import java.util.UUID;
+        |import javax.persistence.EntityNotFoundException;
+        |import static spark.Spark.*;
+        |import com.google.gson.Gson;
+        |import serviceImpl.*;
+        |
+        |""")
+
+      block(s"public final class Spark${service.name.toPascal}") {
+
+        block(s"""public static void register()"""){
+
+          service.functions.foreach { f =>
+            ln(s"""${f.method}("${service.serviceUrl}${functionUrl(f)}", (req, res) -> {""")
+            if(ftype(f) != "void")
+              ln(s"""String jsonInString = "";""")
+            block(s"try"){
+              if(ftype(f) != "void"){
+                f.modifier match {
+                  case "required" =>
+                    ln(s"jsonInString = new Gson().toJson(new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)}));")
+                  case "repeated" =>
+                    ln(s"jsonInString = new Gson().toJson(new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)}));")
+                  case _ => ""
+                }
+              }
+              else
+                ln(s"new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)});")
+            }
+            block(s"catch (EntityNotFoundException e)"){
+              ln(s"""halt(404, "{\\"message\\" : \\"not found\\"}");""")
+            }
+            block(s"catch (Throwable e)"){
+              ln(s"""halt(500, "{\\"message\\" : \\"internal server error\\"}");""")
+            }
+            if(ftype(f) == "void")
+              ln(s"""return "";""")
+            else
+              ln(s"return jsonInString;")
+            ln(s"});\n")
+          }
         }
       }
     }
-
   }
 }
