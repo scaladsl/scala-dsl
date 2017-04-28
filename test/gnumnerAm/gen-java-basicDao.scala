@@ -125,7 +125,7 @@ generate {
 
         block(s"public void remove(UUID id) throws Throwable"){
           ln(s"""final String SQL_DELETE = "delete from ${structure.name} where id =?;";""")
-          ln(s"""logger.info("delete from supplier where id = " + id + ")");""")
+          ln(s"""logger.info("delete from ${structure.name} where id = " + id + ")");""")
           block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_DELETE))"){
             ln(s"ps.setObject(1, id);")
             ln(s"ps.executeUpdate();")
@@ -159,7 +159,7 @@ generate {
         if ( hasPrimaryKey(structure) ) {
           block(s"public ${structure.name.toPascal} selectByKey(java.util.UUID id) throws Throwable"){
             ln(s"""final String SQL_SELECT_BY_KEY = "Select * from ${structure.name} where id = ? ;";""")
-            ln(s"""logger.info("Select * from supplier where id = " + id + ";");""")
+            ln(s"""logger.info("Select * from ${structure.name} where id = " + id + ";");""")
             block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(SQL_SELECT_BY_KEY))"){
               ln(s"${structure.name.toPascal} ${structure.name.toCamel} = new ${structure.name.toPascal}();")
               structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>

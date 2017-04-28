@@ -28,7 +28,7 @@
     'path required 'string
   }
 
-  'model ::= namespace {
+  'service ::= namespace {
 
     //
     // The service designed to operate with cpvs.
@@ -39,14 +39,14 @@
       // Retrieves the cpv associated with the specified identity.
       //
       'retrieve_by_id ::= get(s"/${'id as 'uuid}") {
-        returns required 'model::'cpv
+        returns required 'cpv
       }
 
       //
       // Retrieves all the cpvs.
       //
       'retrieve_all ::= get(s"/") {
-        returns repeated 'model::'cpv
+        returns repeated 'cpv
       }
     }
   }
