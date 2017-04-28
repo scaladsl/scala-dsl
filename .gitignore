@@ -1,4 +1,4 @@
-*.class
+build/*.class
 *.log
 
 # sbt specific
