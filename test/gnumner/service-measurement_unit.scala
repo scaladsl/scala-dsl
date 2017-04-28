@@ -25,7 +25,7 @@
     //
     // The service designed to operate with measurement units.
     //
-    'measurement_unit ::= service(s"/api/measurementUnit") {
+    'measurement_unit ::= service(s"/api/measurementUnits") {
 
       //
       // Retrieves the measurement unit associated with the specified identity.

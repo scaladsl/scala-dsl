@@ -164,6 +164,9 @@ generate {
               else
                 ln(s"new ${service.name.toPascal}Impl().${f.name.toCamel}(${functionParams(f)});")
             }
+            block(s"catch (PageIndexNotSpecifiedException e)") {
+              ln(s"""halt(400, e.jsonMessage());""")
+            }
             block(s"catch (EntityNotFoundException e)"){
               ln(s"""halt(404, "{\\"message\\" : \\"not found\\"}");""")
             }

@@ -2,7 +2,7 @@
   // The authority
   'authority ::= struct {
     // authority identity
-    'id required 'uuid
+    'id required 'uuid ('pkey -> true)
 
     // authority code
     'code required 'string
@@ -24,7 +24,7 @@
     //
     // The service designed to operate with armeps tenders
     //
-    'authority ::= service("/api/authority") {
+    'authority ::= service("/api/authorities") {
 
       //
       // Retrieves the authority associated with the specified identity.
@@ -34,9 +34,9 @@
       }
 
       //
-      // Retrives all the authority
+      // Retrieves all the authority
       //
-      'retrive_all ::= get("/") {
+      'retrieve_all ::= get("/") {
         returns repeated 'model::'authority
       }
 

@@ -4,7 +4,7 @@
   'form ::= struct {
 
     // form identity
-    'id required 'uuid
+    'id required 'uuid ('pkey -> true)
 
     // form code
     'code required 'string
@@ -36,7 +36,7 @@
     //
     // The service designed to operate with armeps tenders
     //
-    'form ::= service("/api/form") {
+    'form ::= service("/api/forms") {
 
 
       //
@@ -47,9 +47,9 @@
       }
 
       //
-      // Retrives all the form
+      // Retrieves all the form
       //
-      'retrive_all ::= get("/") {
+      'retrieve_all ::= get("/") {
         returns repeated 'model::'form
       }
 

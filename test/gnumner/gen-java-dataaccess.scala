@@ -128,7 +128,7 @@ generate {
         ln(s"")
         block(s"public void remove(UUID id) throws Throwable"){
           ln(s"""final String sql = "delete from ${structure.name} where id =?;";""")
-          ln(s"""logger.info("delete from supplier where id = " + id + ")");""")
+          ln(s"""logger.info("delete from ${structure.name} where id = " + id + ")");""")
           block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
             ln(s"ps.setObject(1, id);")
             ln(s"ps.executeUpdate();")
@@ -163,7 +163,12 @@ generate {
           block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
             block(s"if( page != null )"){
               ln(s"ps.setInt(1, page.getSize());")
-              ln(s"ps.setInt(2, page.getIndex());")
+              ln(s"ps.setInt(2, page.getIndex()*page.getSize());")
+              ln("Object[] fields = {page.getSize(), page.getIndex()};")
+              ln("logger.info(sqlStatement(sql,fields));")
+            }
+            block("else") {
+              ln("logger.info(sql);")
             }
             ln(s"ResultSet rs = ps.executeQuery();")
             ln(s"List<${structure.name.toPascal}> list = new ArrayList<${structure.name.toPascal}>();")
@@ -189,7 +194,7 @@ generate {
           ln(s"")
           block(s"public ${structure.name.toPascal} selectByKey(java.util.UUID id) throws Throwable"){
             ln(s"""final String sql = "select * from ${structure.name} where id = ? ;";""")
-            ln(s"""logger.info("select * from supplier where id = " + id + ";");""")
+            ln(s"""logger.info("select * from ${structure.name} where id = " + id + ";");""")
             block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
               ln(s"${structure.name.toPascal} e = new ${structure.name.toPascal}();")
               structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
