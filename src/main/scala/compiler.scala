@@ -1,4 +1,3 @@
-
 package dslc
 
 import scala.collection.mutable.ListBuffer
@@ -75,11 +74,12 @@ object CDSL {
         result += "children" -> children.map(c => Map(c.name -> c.toMap)).toList
       result
     }
+
   }
 
   object AST {
     val root = createRoot()
-    private val context = Stack[Node](root)
+    val context = Stack[Node](root)
 
     def resolve(name: String): Node = {
       var path = name.split("::").toList
@@ -93,6 +93,17 @@ object CDSL {
         throw new IllegalArgumentException(s"unknown type name: $name")
       res
     }
+
+    def resolveNamespace(name: String): Node = {
+      var path = name.split("::").toList
+      val res = if (path.size > 1) {
+        findByPath(root, path)
+      } else {
+        findRecursively(context.top, name)
+      }
+      res
+    }
+
 
     def findByPath(current: Node, path: List[String]): Node = {
       current.find(path.head) match {
@@ -170,6 +181,9 @@ object CDSL {
   class EntityTag(_node: Node, _block: => Unit) {
     var node = _node
     def block() = _block
+    override def toString(): String = {
+      return s"EntityTag(${node.toString()}: Node, _block: => Unit)";
+    }
   }
 
   private def entity(prototype: String, block: => Unit, baseUrl: String = ""): EntityTag = {
@@ -183,6 +197,7 @@ object CDSL {
   private var funcArgs = new scala.collection.mutable.ArrayBuffer[Tuple2[String, String]]()
 
   implicit class Identity(val id: Symbol) {
+    def name = id.name
 
     def ::=(function: Function): Unit = {
       val node = Node(name, "function", AST.current)
@@ -215,6 +230,26 @@ object CDSL {
       AST.pop()
     }
 
+    // def ::=(tag: EntityTag): Unit = {
+    //   //println(AST.context)
+    //   println(name)
+    //   if(name.contains("::")){
+    //     val namespaces = name.split("::")
+    //     for( i <- 0 to namespaces.size -2 ){ AST.push(Node(namespaces(i), "namespace", AST.current))}
+    //     tag.node.name = namespaces.last
+    //     tag.node.parent = AST.current
+    //     AST.push(tag.node)
+    //     tag.block
+    //     namespaces.foreach{_ => AST.pop()}
+    //   }
+    //   else{
+    //     tag.node.name = name
+    //     AST.push(tag.node)
+    //     tag.block
+    //     AST.pop()
+    //   }
+    // }
+
     def ::=(tag: EntityTag): Unit = {
       if(name.contains("::")){
         val namespaces = name.split("::")
@@ -224,16 +259,24 @@ object CDSL {
         AST.push(tag.node)
         tag.block
         namespaces.foreach{_ => AST.pop()}
-      }
-      else{
+      } else {
         tag.node.name = name
-        AST.push(tag.node)
-        tag.block
-        AST.pop()
+        var node: Node = new Node(null, null, null)
+        if(tag.node.prototype.equals("namespace")) { node = AST.resolveNamespace(name) } 
+        else { node = null }
+        if(node == null) {
+          AST.push(tag.node)
+          tag.block
+          AST.pop()
+        } else {
+          global = List[Any]()
+          AST.context.push(node)
+          tag.block
+          AST.pop()
+        }
       }
     }
 
-    def name = id.name
     def ::(other: Identity): Identity = new Identity(Symbol(s"${other.name}::${name}"))
     def required(datatype: Identity): Unit = field(datatype, "required")
     def optional(datatype: Identity): Unit = field(datatype, "optional")

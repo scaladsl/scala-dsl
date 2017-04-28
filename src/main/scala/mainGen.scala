@@ -16,7 +16,7 @@ object mainGen {
         val optVal = a.split('=')(1)
         options.put(optKey, optVal)
       } else {
-        if(file != "") throw new IllegalArgumentException(s"There mast be only one filepath")
+        if(file != "") throw new IllegalArgumentException("""Usage: java -jar dslg.jar path/to/generator.scala [--key="value"]""")
           file = a
       }
     }

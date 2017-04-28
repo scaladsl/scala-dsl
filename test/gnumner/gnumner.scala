@@ -1,0 +1,5 @@
+require("./test/gnumner/service-authority.scala")
+require("./test/gnumner/service-cpv.scala")
+require("./test/gnumner/service-form.scala")
+require("./test/gnumner/service-measurement_unit.scala")
+require("./test/gnumner/service-supplier.scala")

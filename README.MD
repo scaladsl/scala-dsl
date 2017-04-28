@@ -1,9 +1,19 @@
-# scala-dsl
+<h1>The usage</h1>
 
-$ cd scala-dsl
+<ol>
 
-$ ./makeProject
-$ ./sgfc ./test/blog.scala | ./sgfg ./test/gen-java-model.scala --output="./dsl-output/"
+<li>
+<ol>
+<li>user@host: scala-dsl $ ./makeProject</li>
+<li>user@host: scala-dsl $ ./sgfc path/to/defination.scala | ./sgfg path/to/generator.scala --output="dsl-output"</li>
+</ol>
+</li>
 
-$ ./makeJars
-$ java -jar dslc.jar ./test/blog.scala | java -jar dslg.jar ./test/gen-java-model.scala --output="./dsl-output/"
+<li>
+<ol>
+<li>user@host: scala-dsl $ ./makeJars</li>
+<li>user@host: scala-dsl $ java -jar dslc.jar path/to/defination.scala | java -jar dslg.jar path/to/generator.scala --output="dsl-output"</li>
+</ol>
+</li>
+
+</ol>

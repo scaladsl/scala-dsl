@@ -1,7 +1,7 @@
 #!/bin/bash
 
+./makeProject
 # jar cfe dslc.jar mainDef -C build/compiler/ . -C libs/dsl-scala-library-2.12.1 .
 jar cvfe dslc.jar mainDef -C build/compiler/ . -C libs/dsl-scala-library-2.12.1 .
-
 # jar cfe dslg.jar mainGen -C build/generator/ . -C libs/dsl-scala-library-2.12.1 .
 jar cvfe dslg.jar mainGen -C build/generator/ . -C libs/dsl-scala-library-2.12.1 .
