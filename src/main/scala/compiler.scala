@@ -176,6 +176,7 @@ object CDSL {
   def service(baseUrl: String)(block: => Unit) = entity("service", block, baseUrl)
   def namespace(block: => Unit): EntityTag = entity("namespace", block)
   def struct(block: => Unit): EntityTag = entity("structure", block)
+  def table(block: => Unit): EntityTag = entity("table", block)
   def enum(block: => Unit): EntityTag = entity("enumeration", block)
 
   class EntityTag(_node: Node, _block: => Unit) {
