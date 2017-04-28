@@ -225,6 +225,7 @@ object gdsl {
   case class Namespace(_id: String, _data: ObjectT, _parent: Entity) extends Entity(_id, _data, _parent) {
     def namespaces = children.filter(_.isInstanceOf[Namespace]).map(_.asInstanceOf[Namespace])
     def structures = children.filter(_.isInstanceOf[Structure]).map(_.asInstanceOf[Structure])
+    def tables = children.filter(_.isInstanceOf[Table]).map(_.asInstanceOf[Table])
     def enumerations = children.filter(_.isInstanceOf[Enumeration]).map(_.asInstanceOf[Enumeration])
     def services = children.filter(_.isInstanceOf[Service]).map(_.asInstanceOf[Service])
   }
