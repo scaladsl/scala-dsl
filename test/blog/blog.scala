@@ -1,1 +1,1 @@
-require("./test/blog/blog-services.scala")
+require("./test/blog/services-blog.scala")

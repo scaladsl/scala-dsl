@@ -1,15 +1,18 @@
+build/*.class
+*.log
 
-# ------ < sbt specific ------
+# sbt specific
+.cache
+.history
+.lib/
 dist/*
 target/
+project/target/
 lib_managed/
 src_managed/
-project/*
-.history
-.cache
-.lib/
-# ------ sbt specific > ------
+project/boot/
+project/plugins/project/
 
-archive/
-dsl-output/
-
+# ENSIME 
+.ensime
+.ensime_cache/
