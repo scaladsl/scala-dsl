@@ -26,6 +26,8 @@ object gdsl {
   private var onEndNamespace: Namespace => Unit = null
   private var onBeginStructure: Structure => Unit = null
   private var onEndStructure: Structure => Unit = null
+  private var onBeginTable: Table => Unit = null
+  private var onEndTable: Table => Unit = null
   private var onBeginEnumeration: Enumeration => Unit = null
   private var onEndEnumeration: Enumeration => Unit = null
   private var onBeginService: Service => Unit = null
@@ -36,6 +38,7 @@ object gdsl {
   object begin {
     def NAMESPACE(generate: Namespace => Unit): Unit = onBeginNamespace  = generate
     def STRUCTURE(generate: Structure => Unit): Unit = onBeginStructure = generate
+    def TABLE(generate: Table => Unit): Unit = onBeginTable = generate
     def ENUMERATION(generate: Enumeration => Unit): Unit = onBeginEnumeration = generate
     def SERVICE(generate: Service => Unit): Unit = onBeginService = generate
     def ALL(generate: List[Entity] => Unit): Unit = onBeginAll = generate
@@ -44,6 +47,7 @@ object gdsl {
   object end {
     def NAMESPACE(generate: Namespace => Unit): Unit = onEndNamespace  = generate
     def STRUCTURE(generate: Structure => Unit): Unit = onEndStructure = generate
+    def TABLE(generate: Table => Unit): Unit = onEndTable = generate
     def ENUMERATION(generate: Enumeration => Unit): Unit = onEndEnumeration = generate
     def SERVICE(generate: Service => Unit): Unit = onEndService = generate
     def ALL(generate: List[Entity] => Unit): Unit = onEndAll = generate
@@ -131,6 +135,7 @@ object gdsl {
       content("prototype") match {
         case "namespace" => Namespace(name, content, parent)
         case "structure" => Structure(name, content, parent)
+        case "table" => Table(name, content, parent)
         case "enumeration" => Enumeration(name,content, parent)
         case "field" => Field(name, content, parent)
         case "constant" => Constant(name, content, parent)
@@ -220,6 +225,7 @@ object gdsl {
   case class Namespace(_id: String, _data: ObjectT, _parent: Entity) extends Entity(_id, _data, _parent) {
     def namespaces = children.filter(_.isInstanceOf[Namespace]).map(_.asInstanceOf[Namespace])
     def structures = children.filter(_.isInstanceOf[Structure]).map(_.asInstanceOf[Structure])
+    def tables = children.filter(_.isInstanceOf[Table]).map(_.asInstanceOf[Table])
     def enumerations = children.filter(_.isInstanceOf[Enumeration]).map(_.asInstanceOf[Enumeration])
     def services = children.filter(_.isInstanceOf[Service]).map(_.asInstanceOf[Service])
   }
@@ -235,6 +241,10 @@ object gdsl {
   case class DateDatatype() extends Datatype("date", Map(), null)
   
   case class Structure(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
+    def fields = children.filter(_.isInstanceOf[Field]).map(_.asInstanceOf[Field])
+  }
+
+  case class Table(_id: String, _data: ObjectT, _parent: Entity) extends Datatype(_id, _data, _parent) {
     def fields = children.filter(_.isInstanceOf[Field]).map(_.asInstanceOf[Field])
   }
 
@@ -280,7 +290,12 @@ object gdsl {
         if ( onBeginStructure != null ) onBeginStructure(s)
         current.children.foreach(traverse(_))
         if ( onEndStructure != null ) onEndStructure(s)
-        
+
+      case t: Table =>
+        if ( onBeginTable != null ) onBeginTable(t)
+        current.children.foreach(traverse(_))
+        if ( onEndTable != null ) onEndTable(t)  
+
       case e: Enumeration =>
         if ( onBeginEnumeration != null ) onBeginEnumeration(e)
         current.children.foreach(traverse(_))
