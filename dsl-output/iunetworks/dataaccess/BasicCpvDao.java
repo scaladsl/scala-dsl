@@ -38,7 +38,7 @@ public class BasicCpvDao extends BaseDao {
   }
   
   public void insert(Cpv cpv) throws Throwable {
-    try( DSLContext create = dsl() ){
+    try( DSLContext create = dsl() ) {
       create.insertInto(CPV, ID, PARENT_ID, CODE, NAME_HY, NAME_RU, NAME_EN, ARMEPS_ID, PATH).values(cpv.getId(), cpv.getParentId(), cpv.getCode(), cpv.getNameHy(), cpv.getNameRu(), cpv.getNameEn(), cpv.getArmepsId(), cpv.getPath()).execute();
     }
   }
@@ -70,7 +70,7 @@ public class BasicCpvDao extends BaseDao {
   }
   
   public List<Cpv> selectAll(PageInfo page, OrderInfo order) throws Throwable {
-    try( DSLContext create = dsl() ){
+    try( DSLContext create = dsl() ) {
       List<Cpv> list = new ArrayList<Cpv>();
       SelectQuery q = create.selectQuery();
       q.addFrom(CPV);
@@ -89,7 +89,7 @@ public class BasicCpvDao extends BaseDao {
   
   public Cpv selectByKey(UUID id) throws Throwable {
     try( DSLContext create = dsl() ) {
-      return  makeCpv( create.select().from(CPV).where(ID.equal(id)).fetchOne() ); 
+      return makeCpv( create.select().from(CPV).where(ID.equal(id)).fetchOne() ); 
     }
   }
   
