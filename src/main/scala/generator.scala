@@ -14,7 +14,7 @@ object gdsl {
     var newLine = "\n"
     var indentWith = "  "
     var indentLevel = 0
-    var blockStart = " {"
+    var blockStart = "{"
     var blockEnd = "}"
     var currentDir = "./"
   }

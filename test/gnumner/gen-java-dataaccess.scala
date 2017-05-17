@@ -58,7 +58,6 @@ generate {
   }
 
   begin TABLE { table =>
-    println(dbName(table))
     file(s"iunetworks/dataaccess/Basic${table.name.toPascal}Dao.java") {
       ln(s"package am.iunetworks.ppcm.api.dataaccess;")
       bigBlock(s"""
