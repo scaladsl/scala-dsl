@@ -142,23 +142,11 @@ generate {
         ln(s"")
 
         block(s"public void update(${table.name.toPascal} ${table.name.toCamel}) throws Throwable") {
-          // var sqlParam = ""
-          // var filtredFildsPkey = table.fields.filter(_.has('pkey) == true).map(_.name)
-          // filtredFildsPkey.foreach{ f => sqlParam += s"${f} = ?, " }
-          // sqlParam = sqlParam + s"where id = ?"
-
-          // var args = for(f <- table.fields) yield s"${table.name.toCamel}.get${f.name.toPascal}()"
-          
           block(s"try( DSLContext create = dsl() )"){
             ln(s"create.update(${table.name.toUpperCase()})")
             dbName(table).foreach { f =>
               ln(s".set(${f.toUpperCase()}, ${table.name.toCamel}.get${f.toPascal}())")
             }
-            // var pkeyName = ""
-            // table.fields.filter(_.has('pkey)).foreach{f=>
-            //   if(f.has('db_name))
-            //     pkeyName = f.apply('db_name)
-            // }
             ln(s".where(${pkeyName(table).toUpperCase()}.equal(${table.name.toCamel}.get${pkeyName(table).toPascal}()))")
             ln(s".execute();")
           }
@@ -167,11 +155,6 @@ generate {
         ln(s"")
         block(s"public void remove(UUID id) throws Throwable"){
           block(s"try( DSLContext create = dsl() )"){
-            // var pkeyName = ""
-            // table.fields.filter(_.has('pkey)).foreach{f=>
-            //   if(f.has('db_name))
-            //     pkeyName = f.apply('db_name)
-            // }
             ln(s"create.delete(${table.name.toUpperCase()}).where(${pkeyName(table).toUpperCase()}.equal(id)).execute();")
           }
         }
