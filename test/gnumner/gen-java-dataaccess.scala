@@ -46,6 +46,8 @@ def pkeyName(table: Table): String = {
   table.fields.filter(_.has('pkey)).foreach{f=>
     if(f.has('db_name))
       pkeyName = f.apply('db_name)
+    else
+      pkeyName += f.name
   }
   pkeyName
 }
