@@ -34,7 +34,7 @@ def dbName(table: Table): scala.collection.mutable.ListBuffer[String] = {
   var fieldList = new scala.collection.mutable.ListBuffer[String]()
   table.fields.foreach { f =>
     if(f.has('db_name))
-      fieldList += f.apply('db_name)
+      fieldList += f('db_name)
     else
       fieldList += f.name
   }
@@ -45,7 +45,7 @@ def pkeyName(table: Table): String = {
   var pkeyName = ""
   table.fields.filter(_.has('pkey)).foreach{f=>
     if(f.has('db_name))
-      pkeyName = f.apply('db_name)
+      pkeyName = f('db_name)
     else
       pkeyName += f.name
   }
@@ -134,7 +134,6 @@ generate {
         block(s"public void insert(${table.name.toPascal} ${table.name.toCamel}) throws Throwable") {
           var sqlParam = dbName(table).map(f=> s"${f.toUpperCase()}").mkString(", ")
           var sqlValues = dbName(table).map(f=> s"${table.name.toCamel}.get${f.toPascal}()").mkString(", ")
-          //       var args = for(f <- table.fields) yield s"${table.name.toCamel}.get${f.name.toPascal}()"
           block(s"try( DSLContext create = dsl() )"){
             ln(s"create.insertInto(${table.name.toUpperCase()}, $sqlParam).values($sqlValues).execute();")
           }
@@ -184,7 +183,7 @@ generate {
 
         }
 
-        if ( !table.fields.filter(_.has('pkey)).map(f=>f).isEmpty) {
+        if ( !table.fields.filter(_.has('pkey)).isEmpty) {
           ln(s"")
           block(s"public ${table.name.toPascal} selectByKey(UUID id) throws Throwable"){
             block(s"try( DSLContext create = dsl() )"){
@@ -193,7 +192,7 @@ generate {
           }
         }
 
-        if ( !table.fields.filter(_.has('ref)).map(f=> f).isEmpty ) {
+        if ( !table.fields.filter(_.has('ref)).isEmpty ) {
           ln("")
           var fkeyName = table.fields.filter(_.has('ref)).map { f =>
             block(s"public List<${table.name.toPascal}> selectBy${f.name.toPascal}(UUID id, PageInfo page, OrderInfo order) throws Throwable"){
