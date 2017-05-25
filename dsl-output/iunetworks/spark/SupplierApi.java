@@ -17,6 +17,9 @@ public final class SupplierApi extends BasicApi{
     try{
       return toJson(new SupplierServiceImpl().retrieveById(UUID.fromString(req.params(":id"))));
     }
+    catch (PageIndexNotSpecifiedException e){
+      halt(400, e.jsonMessage());
+    }
     catch (EntityNotFoundException e){
       halt(404, "{\"message\" : \"not found\"}");
     }
@@ -32,6 +35,9 @@ public final class SupplierApi extends BasicApi{
       PageInfo paging = pageInfo(req);
       OrderInfo ordering = orderInfo(req);
       return toJson(new SupplierServiceImpl().retrieveAll(paging, ordering));
+    }
+    catch (PageIndexNotSpecifiedException e){
+      halt(400, e.jsonMessage());
     }
     catch (EntityNotFoundException e){
       halt(404, "{\"message\" : \"not found\"}");

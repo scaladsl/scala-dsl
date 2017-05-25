@@ -12,10 +12,13 @@ public final class FormApi extends BasicApi{
   public static void register(){
     final Logger logger = Logger.getLogger(FormApi.class);
 
-    get("/api/form/:id", (req, res) -> {
-    logger.info("get: /api/form"+"/" + req.params(":id"));
+    get("/api/forms/:id", (req, res) -> {
+    logger.info("get: /api/forms"+"/" + req.params(":id"));
     try{
       return toJson(new FormServiceImpl().retrieveById(UUID.fromString(req.params(":id"))));
+    }
+    catch (PageIndexNotSpecifiedException e){
+      halt(400, e.jsonMessage());
     }
     catch (EntityNotFoundException e){
       halt(404, "{\"message\" : \"not found\"}");
@@ -26,12 +29,15 @@ public final class FormApi extends BasicApi{
     return null;
     });
 
-    get("/api/form", (req, res) -> {
-    logger.info("get: /api/form");
+    get("/api/forms", (req, res) -> {
+    logger.info("get: /api/forms");
     try{
       PageInfo paging = pageInfo(req);
       OrderInfo ordering = orderInfo(req);
-      return toJson(new FormServiceImpl().retriveAll(paging, ordering));
+      return toJson(new FormServiceImpl().retrieveAll(paging, ordering));
+    }
+    catch (PageIndexNotSpecifiedException e){
+      halt(400, e.jsonMessage());
     }
     catch (EntityNotFoundException e){
       halt(404, "{\"message\" : \"not found\"}");

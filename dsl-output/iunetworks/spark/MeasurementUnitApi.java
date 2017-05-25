@@ -12,10 +12,13 @@ public final class MeasurementUnitApi extends BasicApi{
   public static void register(){
     final Logger logger = Logger.getLogger(MeasurementUnitApi.class);
 
-    get("/api/measurementUnit/:id", (req, res) -> {
-    logger.info("get: /api/measurementUnit"+"/" + req.params(":id"));
+    get("/api/measurementUnits/:id", (req, res) -> {
+    logger.info("get: /api/measurementUnits"+"/" + req.params(":id"));
     try{
       return toJson(new MeasurementUnitServiceImpl().retrieveById(UUID.fromString(req.params(":id"))));
+    }
+    catch (PageIndexNotSpecifiedException e){
+      halt(400, e.jsonMessage());
     }
     catch (EntityNotFoundException e){
       halt(404, "{\"message\" : \"not found\"}");
@@ -26,12 +29,15 @@ public final class MeasurementUnitApi extends BasicApi{
     return null;
     });
 
-    get("/api/measurementUnit", (req, res) -> {
-    logger.info("get: /api/measurementUnit");
+    get("/api/measurementUnits", (req, res) -> {
+    logger.info("get: /api/measurementUnits");
     try{
       PageInfo paging = pageInfo(req);
       OrderInfo ordering = orderInfo(req);
       return toJson(new MeasurementUnitServiceImpl().retrieveAll(paging, ordering));
+    }
+    catch (PageIndexNotSpecifiedException e){
+      halt(400, e.jsonMessage());
     }
     catch (EntityNotFoundException e){
       halt(404, "{\"message\" : \"not found\"}");

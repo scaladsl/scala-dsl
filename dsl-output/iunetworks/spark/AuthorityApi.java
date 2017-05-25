@@ -12,10 +12,13 @@ public final class AuthorityApi extends BasicApi{
   public static void register(){
     final Logger logger = Logger.getLogger(AuthorityApi.class);
 
-    get("/api/authority/:id", (req, res) -> {
-    logger.info("get: /api/authority"+"/" + req.params(":id"));
+    get("/api/authorities/:id", (req, res) -> {
+    logger.info("get: /api/authorities"+"/" + req.params(":id"));
     try{
       return toJson(new AuthorityServiceImpl().retrieveById(UUID.fromString(req.params(":id"))));
+    }
+    catch (PageIndexNotSpecifiedException e){
+      halt(400, e.jsonMessage());
     }
     catch (EntityNotFoundException e){
       halt(404, "{\"message\" : \"not found\"}");
@@ -26,12 +29,15 @@ public final class AuthorityApi extends BasicApi{
     return null;
     });
 
-    get("/api/authority", (req, res) -> {
-    logger.info("get: /api/authority");
+    get("/api/authorities", (req, res) -> {
+    logger.info("get: /api/authorities");
     try{
       PageInfo paging = pageInfo(req);
       OrderInfo ordering = orderInfo(req);
-      return toJson(new AuthorityServiceImpl().retriveAll(paging, ordering));
+      return toJson(new AuthorityServiceImpl().retrieveAll(paging, ordering));
+    }
+    catch (PageIndexNotSpecifiedException e){
+      halt(400, e.jsonMessage());
     }
     catch (EntityNotFoundException e){
       halt(404, "{\"message\" : \"not found\"}");
