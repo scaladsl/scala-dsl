@@ -176,6 +176,7 @@ object CDSL {
   def service(baseUrl: String)(block: => Unit) = entity("service", block, baseUrl)
   def namespace(block: => Unit): EntityTag = entity("namespace", block)
   def struct(block: => Unit): EntityTag = entity("structure", block)
+  def table(block: => Unit): EntityTag = entity("table", block)
   def enum(block: => Unit): EntityTag = entity("enumeration", block)
 
   class EntityTag(_node: Node, _block: => Unit) {
@@ -262,7 +263,7 @@ object CDSL {
       } else {
         tag.node.name = name
         var node: Node = new Node(null, null, null)
-        if(tag.node.prototype.equals("namespace")) { node = AST.resolveNamespace(name) } 
+        if(tag.node.prototype.equals("namespace")) { node = AST.resolveNamespace(name)}
         else { node = null }
         if(node == null) {
           AST.push(tag.node)
@@ -270,6 +271,12 @@ object CDSL {
           AST.pop()
         } else {
           global = List[Any]()
+          node.parent.children.foreach { n =>
+            if(n != node && n.prototype != "primitive") {
+              AST.context.push(n);
+              AST.pop();
+            }
+          }
           AST.context.push(node)
           tag.block
           AST.pop()

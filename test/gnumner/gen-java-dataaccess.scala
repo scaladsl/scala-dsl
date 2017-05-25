@@ -3,14 +3,14 @@ import dslg.gdsl._
 def jtype(field: Field): String = {
 
   val baseType = field.datatype match {
-    case s: StringDatatype => "java.lang.String"
-    case i: IntDatatype => "java.lang.Integer"
-    case f: FloatDatatype => "java.lang.Double"
-    case b: BoolDatatype => "java.lang.Boolean"
-    case u: UuidDatatype => "java.util.UUID"
-    case d: DateDatatype => "java.util.Date"
+    case _: StringDatatype => "String"
+    case _: IntDatatype    => "Integer"
+    case _: FloatDatatype  => "Double"
+    case _: BoolDatatype   => "Boolean"
+    case _: UuidDatatype   => "java.util.UUID"
+    case _: DateDatatype   => "java.sql.Timestamp"
     case _ => field.datatype
-      if(field.datatype != null && field.datatype.isInstanceOf[Structure]){
+      if(field.datatype != null && field.datatype.isInstanceOf[Table]){
         var list = field("datatype").split("::")
         list = list.take(list.length -1) :+ field.datatype.name.toPascal
         list.mkString(".")
@@ -28,223 +28,195 @@ def jtype(field: Field): String = {
 
 }
 
-def hasPrimaryKey(s: Structure): Boolean = s.fields.find(_.name == "id").isDefined
+def hasPrimaryKey(s: Table): Boolean = s.fields.find(_.name == "id").isDefined
+
+def dbName(table: Table): scala.collection.mutable.ListBuffer[String] = {
+  var fieldList = new scala.collection.mutable.ListBuffer[String]()
+  table.fields.foreach { f =>
+    if(f.has('db_name))
+      fieldList += f('db_name)
+    else
+      fieldList += f.name
+  }
+  fieldList
+}
+
+def pkeyName(table: Table): String = {
+  var pkeyName = ""
+  table.fields.filter(_.has('pkey)).foreach{f=>
+    if(f.has('db_name))
+      pkeyName = f('db_name)
+    else
+      pkeyName += f.name
+  }
+  pkeyName
+}
 
 generate {
   begin ALL { root =>
-    options.blockStart = "{"
+    options.blockStart = " {"
     options.blockEnd = "}"
     options.currentDir = config.output
   }
 
-
-  begin STRUCTURE { structure =>
-    file(s"iunetworks/dataaccess/Basic${structure.name.toPascal}Dao.java") {
+  begin TABLE { table =>
+    file(s"iunetworks/dataaccess/Basic${table.name.toPascal}Dao.java") {
       ln(s"package am.iunetworks.ppcm.api.dataaccess;")
       bigBlock(s"""
           |import java.util.*;
           |import java.sql.*;
           |import javax.sql.DataSource; 
-          |import am.iunetworks.ppcm.api.model.*;\n
-          |import org.apache.log4j.Logger;
+          |import am.iunetworks.ppcm.api.service.*;\n
+          |import static org.jooq.impl.DSL.*;
+          |import org.jooq.*;
+          |import database.dbcp2.*;
           |
           |""")
       
-      block(s"public class Basic${structure.name.toPascal}Dao extends BaseDao"){
+      block(s"public class Basic${table.name.toPascal}Dao extends BaseDao"){
 
-        ln(s"")
-        block(s"protected Basic${structure.name.toPascal}Dao (DataSource  dataSource)"){
-          ln(s"super(dataSource, Logger.getLogger(Basic${structure.name.toPascal}Dao.class));")
+        ln(s"""public static Table ${table.name.toUpperCase()} = table(name("${table.name}"));""")
+
+        table.fields.foreach{f=>
+          f.datatype match {
+            case _: StringDatatype => {
+              if(f.has('db_name))
+                ln(s"""public static final Field<String> ${f.apply('db_name).toUpperCase()} = field(name("${table.name}", "${f.apply('db_name)}"), String.class);""")
+              else
+                ln(s"""public static final Field<String> ${f.name.toUpperCase()} = field(name("${table.name}", "${f.name}"), String.class);""")
+            }
+            case _: IntDatatype => {
+              if(f.has('db_name))
+                ln(s"""public static final Field<Integer> ${f.apply('db_name).toUpperCase()} = field(name("${table.name}", "${f.apply('db_name)}"), Integer.class);""")
+              else
+                ln(s"""public static final Field<Integer> ${f.name.toUpperCase()} = field(name("${table.name}", "${f.name}"), Integer.class);""")
+            }
+            case _: FloatDatatype =>{
+              if(f.has('db_name))
+                ln(s"""public static final Field<Double> ${f.apply('db_name).toUpperCase()} = field(name("${table.name}", "${f.apply('db_name)}"), Double.class);""")
+              else
+                ln(s"""public static final Field<Double> ${f.name.toUpperCase()} = field(name("${table.name}", "${f.name}"), Double.class);""")
+            }
+            case _: BoolDatatype =>{
+              if(f.has('db_name))
+                ln(s"""public static final Field<Bollean> ${f.apply('db_name).toUpperCase()} = field(name("${table.name}", "${f.apply('db_name)}"), Boolean.class);""")
+              else
+                ln(s"""public static final Field<Boolean> ${f.name.toUpperCase()} = field(name("${table.name}", "${f.name}"), Boolean.class);""")
+            }
+            case _: UuidDatatype =>{
+              if(f.has('db_name))
+                ln(s"""public static final Field<UUID> ${f.apply('db_name).toUpperCase()} = field(name("${table.name}", "${f.apply('db_name)}"), UUID.class);""")
+              else
+                ln(s"""public static final Field<UUID> ${f.name.toUpperCase()} = field(name("${table.name}", "${f.name}"), UUID.class);""")
+            }
+            case _: DateDatatype =>{
+              if(f.has('db_name))
+                ln(s"""public static final Field<Timestamp> ${f.apply('db_name).toUpperCase()} = field(name("${table.name}", "${f.apply('db_name)}"), Timestamp.class);""")
+              else
+                ln(s"""public static final Field<Timestamp> ${f.name.toUpperCase()} = field(name("${table.name}", "${f.name}"), Timestamp.class);""")
+            }
+          }
         }
+
+        ln("")
+        block(s"protected Basic${table.name.toPascal}Dao (DSLContextFactory dslContextFactory)"){
+          ln(s"super(dslContextFactory);")
+        }
+
+        ln("")
+        block(s"private ${table.name.toPascal} make${table.name.toPascal}(Record r)"){
+          ln(s"${table.name.toPascal} e = new ${table.name.toPascal}();")
+          dbName(table).foreach { f => ln(s"""e.set${f.toPascal}(r.getValue(${f.toUpperCase()}));""") }
+          ln(s"return e;")
+        }
+
         ln(s"")
-        block(s"public void insert(${structure.name.toPascal} ${structure.name.toCamel}) throws Throwable") {
-          var sqlParam = structure.fields.map(f=> s"${f.name}").mkString(", ")
-          var sqlValues = structure.fields.map(f=> s"?").mkString(", ")
-          ln(s"""final String sql = "insert into ${structure.name.toCamel}($sqlParam) values($sqlValues)";""")
-
-          var args = for(f <- structure.fields) yield s"${structure.name.toCamel}.get${f.name.toPascal}()"
-          ln(s"""Object[] fields = {${args.mkString(", ")}};""")
-          ln(s"""logger.info( sqlStatement(sql, fields) );""")
-
-          block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
-            structure.fields.foreach{f=>
-              f.datatype match {
-                case d: DateDatatype => ln(s"String stringDateISO = dateFormat().format(${structure.name.toCamel}.get${f.name.toPascal}());")
-                case _ => ""
-              }
-            }
-            var i = 0;
-            structure.fields.foreach{f=>
-              i += 1
-              f.datatype match {
-                case s: StringDatatype => ln(s"ps.setString($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-                case n: IntDatatype    => ln(s"ps.setInt($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-                case f: FloatDatatype  => ln(s"ps.setDouble($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-                case b: BoolDatatype   => ln(s"ps.setBoolean($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-                case u: UuidDatatype   => ln(s"ps.setObject($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-                case d: DateDatatype   => ln(s"ps.setString($i, stringDateISO);")
-              }
-            }
-            ln(s"ps.executeUpdate();")
+        block(s"public void insert(${table.name.toPascal} ${table.name.toCamel}) throws Throwable") {
+          var sqlParam = dbName(table).map(f=> s"${f.toUpperCase()}").mkString(", ")
+          var sqlValues = dbName(table).map(f=> s"${table.name.toCamel}.get${f.toPascal}()").mkString(", ")
+          block(s"try( DSLContext create = dsl() )"){
+            ln(s"create.insertInto(${table.name.toUpperCase()}, $sqlParam).values($sqlValues).execute();")
           }
         }
         ln(s"")
 
-        block(s"public void update(${structure.name.toPascal} ${structure.name.toCamel}) throws Throwable") {
-          var sqlParam = ""
-          var filtredFildsPkey = structure.fields.filter(_.has('pkey) == false).map(_.name)
-          filtredFildsPkey.foreach{ f =>
-            sqlParam += s"${f} = ?, "
-          }
-          sqlParam = sqlParam + s"where id = ?"
-          ln(s"""final String sql = "update ${structure.name} set $sqlParam;";""")
-
-          var args = for(f <- structure.fields) yield s"${structure.name.toCamel}.get${f.name.toPascal}()"
-          ln(s"""Object[] fields = {${args.mkString(", ")}};""")
-          ln(s"""logger.info( sqlStatement(sql, fields) );""")
-
-          block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
-            structure.fields.foreach{f=>
-              f.datatype match {
-                case d: DateDatatype => ln(s"String stringDateISO = dateFormat().format(${structure.name}.get${f.name.toPascal}());")
-                case _ => ""
-              }
+        block(s"public void update(${table.name.toPascal} ${table.name.toCamel}) throws Throwable") {
+          block(s"try( DSLContext create = dsl() )"){
+            ln(s"create.update(${table.name.toUpperCase()})")
+            dbName(table).foreach { f =>
+              ln(s".set(${f.toUpperCase()}, ${table.name.toCamel}.get${f.toPascal}())")
             }
-            var i = 0
-            structure.fields.foreach{f=>
-              i += 1
-              f.datatype match {
-                case u: UuidDatatype => ln(s"ps.setObject($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-                case n: IntDatatype =>  ln(s"ps.setInt($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-                case d: DateDatatype => ln(s"ps.setString($i, stringDateISO);")
-                case b: BoolDatatype   => ln(s"ps.setBoolean($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-                case _ => ln(s"ps.setString($i, ${structure.name.toCamel}.get${f.name.toPascal}());")
-              }
-            }
-            ln(s"ps.executeUpdate();")
+            ln(s".where(${pkeyName(table).toUpperCase()}.equal(${table.name.toCamel}.get${pkeyName(table).toPascal}()))")
+            ln(s".execute();")
           }
         }
 
         ln(s"")
         block(s"public void remove(UUID id) throws Throwable"){
-          ln(s"""final String sql = "delete from ${structure.name} where id =?;";""")
-          ln(s"""logger.info("delete from ${structure.name} where id = " + id + ")");""")
-          block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
-            ln(s"ps.setObject(1, id);")
-            ln(s"ps.executeUpdate();")
+          block(s"try( DSLContext create = dsl() )"){
+            ln(s"create.delete(${table.name.toUpperCase()}).where(${pkeyName(table).toUpperCase()}.equal(id)).execute();")
           }
         }
 
         ln(s"")
-        block(s"public List<${structure.name.toPascal}> selectAll() throws Throwable"){
+        block(s"public List<${table.name.toPascal}> selectAll() throws Throwable"){
           ln(s"return selectAll(null, null);")
         }
-
+        
         ln(s"")
-        block(s"public List<${structure.name.toPascal}> selectAll(PageInfo page) throws Throwable"){
-          ln(s"return selectAll(page, null);")
-        }
-
-        ln(s"")
-        block(s"public List<${structure.name.toPascal}> selectAll(OrderInfo order) throws Throwable"){
-          ln(s"return selectAll(null, order);")
-        }
-
-        ln(s"")
-        block(s"public List<${structure.name.toPascal}> selectAll(PageInfo page, OrderInfo order) throws Throwable"){
-          ln(s"""String sql = "select * from ${structure.name};";""")
-          ln(s"if( page != null && order == null )")
-          ln(s"""  sql = "select * from ${structure.name} limit ? offset ? ;";""")
-          ln(s"else if ( page == null && order != null )")
-          ln(s"""sql = String.format("select * from ${structure.name} order by \\"%s\\" %s;", order.getOrderBy(), order.getOrderDir());""")
-          ln(s"else if( page != null && order != null )")
-          ln(s"""  sql = String.format("select * from ${structure.name} order by \\"%s\\" %s limit ? offset ?;", order.getOrderBy(), order.getOrderDir());""")
-
-          block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
-            block(s"if( page != null )"){
-              ln(s"ps.setInt(1, page.getSize());")
-              ln(s"ps.setInt(2, page.getIndex()*page.getSize());")
-              ln("Object[] fields = {page.getSize(), page.getIndex()};")
-              ln("logger.info(sqlStatement(sql,fields));")
+        block(s"public List<${table.name.toPascal}> selectAll(PageInfo page, OrderInfo order) throws Throwable") {
+          block(s"try( DSLContext create = dsl() )"){
+            ln(s"List<${table.name.toPascal}> list = new ArrayList<${table.name.toPascal}>();")
+            ln("SelectQuery q = create.selectQuery();")
+            ln(s"q.addFrom(${table.name.toUpperCase()});")
+            block("if( page != null )") {
+              ln("q.addLimit(page.getLimit());")
+              ln("q.addOffset(page.getOffset());")
             }
-            block("else") {
-              ln("logger.info(sql);")
-            }
-            ln(s"ResultSet rs = ps.executeQuery();")
-            ln(s"List<${structure.name.toPascal}> list = new ArrayList<${structure.name.toPascal}>();")
-            block(s"while (rs.next())"){
-              ln(s"${structure.name.toPascal} e = new ${structure.name.toPascal}();")
-              structure.fields.foreach{f=>
-                f.datatype match {
-                  case u: UuidDatatype => ln(s"""e.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                  case i: IntDatatype => ln(s"""e.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
-                  case d: DateDatatype => ln(s"""e.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
-                  case b: BoolDatatype   =>  ln(s"""e.set${f.name.toPascal}(rs.getBoolean("${f.name}"));""")
-                  case _ => ln(s"""e.set${f.name.toPascal}(rs.getString("${f.name}"));""")
-                }
-              }
-              ln(s"list.add(e);")
+            ln(s"if( order != null ) q.addOrderBy(sortedField(order));")
+            ln(s"Result<Record> result = q.fetch();")
+            block(s"for(Record r: result)"){
+              ln(s"list.add( make${table.name.toPascal}(r) );")
             }
             ln(s"return list;")
           }
+
         }
 
-        //var key = structure.fields.filter(_.has('pkey)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
-        if ( hasPrimaryKey(structure) ) {
+        if ( !table.fields.filter(_.has('pkey)).isEmpty) {
           ln(s"")
-          block(s"public ${structure.name.toPascal} selectByKey(java.util.UUID id) throws Throwable"){
-            ln(s"""final String sql = "select * from ${structure.name} where id = ? ;";""")
-            ln(s"""logger.info("select * from ${structure.name} where id = " + id + ";");""")
-            block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
-              ln(s"${structure.name.toPascal} e = new ${structure.name.toPascal}();")
-              structure.fields.filter(_.has('pkey)).map(f=>f).foreach{f=>
-                f.datatype match {
-                  case u: UuidDatatype => ln(s"ps.setObject(1, ${f.name.toCamel});")
-                  case n: IntDatatype =>  ln(s"ps.setInt(1, ${structure.name}.get${f.name.toPascal}());")
-                  case _=> ""
-                }
-              }
-              ln(s"ResultSet rs = ps.executeQuery();")
-              block(s"while (rs.next())"){
-                structure.fields.foreach{f=>
-                  f.datatype match {
-                    case u: UuidDatatype => ln(s"""e.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                    case i: IntDatatype => ln(s"""e.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
-                    case d: DateDatatype => ln(s"""e.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
-                    case b: BoolDatatype   => ln(s"""e.set${f.name.toPascal}(rs.getBoolean("${f.name}"));""")
-                    case _ => ln(s"""e.set${f.name.toPascal}(rs.getString("${f.name}"));""")
-                  }
-                }
-              }
-              ln(s"return e;")
+          block(s"public ${table.name.toPascal} selectByKey(UUID id) throws Throwable"){
+            block(s"try( DSLContext create = dsl() )"){
+              ln(s"return make${table.name.toPascal}( create.select().from(${table.name.toUpperCase()}).where(${pkeyName(table).toUpperCase()}.equal(id)).fetchOne() ); ")
             }
           }
         }
-        ////TODO LOGGER
-        if ( !structure.fields.filter(_.has('ref)).map(f=> f).isEmpty ) {
-          var fkey = structure.fields.filter(_.has('ref)).map(f=> jtype(f) + " " + f.name.toCamel).mkString(", ")
-          var fkeyforsql = structure.fields.filter(_.has('ref)).map(f=> f.name + " = ?").mkString(", ")
-          var fkeyName = structure.fields.filter(_.has('ref)).map(f=> f.name.toPascal).mkString(" ")
-          ln(s"")
-          block(s"public List<${structure.name.toPascal}> selectBy$fkeyName($fkey) throws Throwable"){
-            ln(s"""final String sql = "select * from ${structure.name} where $fkeyforsql ;";""")
-            block(s"try( Connection con = dataSource.getConnection(); PreparedStatement ps = con.prepareStatement(sql))"){
-              ln(s"List<${structure.name.toPascal}> list = new ArrayList<${structure.name.toPascal}>();")
-              structure.fields.filter(_.has('ref)).map(f=>f).foreach{f=>
-                ln(s"ps.setString(1, ${f.name.toCamel}.toString());")
+
+        if ( !table.fields.filter(_.has('ref)).isEmpty ) {
+          ln("")
+          var fkeyName = table.fields.filter(_.has('ref)).map { f =>
+            block(s"public List<${table.name.toPascal}> selectBy${f.name.toPascal}(UUID id, PageInfo page, OrderInfo order) throws Throwable"){
+              ln(s"return selectByForignKey(id, ${f.name.toUpperCase}, page, order);")
+            }
+            ln("")
+          }
+          block(s"private List<${table.name.toPascal}> selectByForignKey(UUID id, Field<UUID> field_id, PageInfo page, OrderInfo order) throws Throwable"){
+            block(s"try( DSLContext create = dsl() )"){
+              ln(s"List<${table.name.toPascal}> list = new ArrayList<${table.name.toPascal}>();")
+              ln("SelectQuery<Record> result = create.selectQuery();")
+              ln(s"result.addFrom(${table.name.toUpperCase()});")
+              ln(s"if(id == null)")
+              ln(s"  result.addConditions(field_id.isNull());")
+              ln(s"else")
+              ln(s"  result.addConditions(field_id.equal(id));")
+              block("if( page != null )") {
+                ln("result.addLimit(page.getLimit());")
+                ln("result.addOffset(page.getOffset());")
               }
-              ln(s"ResultSet rs = ps.executeQuery();")
-              block(s"while (rs.next())"){
-                ln(s"${structure.name.toPascal} e = new ${structure.name.toPascal}();")
-                structure.fields.foreach{f=>
-                  f.datatype match {
-                    case u: UuidDatatype => ln(s"""e.set${f.name.toPascal}(${jtype(f)}.fromString(rs.getString("${f.name}")));""")
-                    case i: IntDatatype => ln(s"""e.set${f.name.toPascal}(rs.getInt("${f.name}"));""")
-                    case d: DateDatatype => ln(s"""e.set${f.name.toPascal}(dateFormat().parse(rs.getString("${f.name}")));""")
-                    case b: BoolDatatype   => ln(s"""e.set${f.name.toPascal}(rs.getBoolean("${f.name}"));""")
-                    case _ => ln(s"""e.set${f.name.toPascal}(rs.getString("${f.name}"));""")
-                  }
-                }
+              ln(s"if( order != null ) result.addOrderBy(sortedField(order));")
+              block(s"for( Record r : result)"){
+                ln(s"${table.name.toPascal} e = new ${table.name.toPascal}();")
+                dbName(table).foreach{f=> ln(s"""e.set${f.toPascal}(r.getValue(${f.toUpperCase}));""") }
                 ln(s"list.add(e);")
               }
               ln(s"return list;")
@@ -254,6 +226,5 @@ generate {
 
       }
     }
-
   }
 }
