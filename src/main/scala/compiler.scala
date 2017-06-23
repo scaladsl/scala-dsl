@@ -156,6 +156,7 @@ object CDSL {
       node.children.append(Node("string", "primitive", node))
       node.children.append(Node("bool", "primitive", node))
       node.children.append(Node("int", "primitive", node))
+      node.children.append(Node("long", "primitive", node))
       node.children.append(Node("float", "primitive", node))
       node.children.append(Node("uuid", "primitive", node))
       node.children.append(Node("date", "primitive", node))

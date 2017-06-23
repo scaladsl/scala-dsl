@@ -154,6 +154,7 @@ object gdsl {
     result = dt match {
       case "string" => StringDatatype()
       case "int"    => IntDatatype()
+      case "long"   => LongDatatype()
       case "float"  => FloatDatatype()
       case "bool"   => BoolDatatype()
       case "uuid"   => UuidDatatype()
@@ -234,6 +235,7 @@ object gdsl {
 
   case class StringDatatype() extends Datatype("string", Map(), null)
   case class IntDatatype() extends Datatype("int", Map(), null)
+  case class LongDatatype() extends Datatype("long", Map(), null)
   case class FloatDatatype() extends Datatype("float", Map(), null)
   case class BoolDatatype() extends Datatype("bool", Map(), null)
   case class UuidDatatype() extends Datatype("uuid", Map(), null)
