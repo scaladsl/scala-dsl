@@ -12,6 +12,7 @@ object CDSL {
     println(JSONArray(global).toString(format))
   }
 
+  
   private def format(o: Any): String = {
     o match {
       case m: Map[_, _] =>
