@@ -11,8 +11,7 @@ object CDSL {
     body
     println(JSONArray(global).toString(format))
   }
-
-  
+  //def format 
   private def format(o: Any): String = {
     o match {
       case m: Map[_, _] =>
